@@ -1,0 +1,4 @@
+;; -*- mode: scheme -*-
+
+(channel-news
+ (version 0))
