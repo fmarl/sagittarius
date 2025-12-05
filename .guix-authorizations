@@ -1,0 +1,4 @@
+;;; -*- mode: scheme -*-
+
+(authorizations
+ (version 0))
