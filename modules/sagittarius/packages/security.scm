@@ -18,7 +18,7 @@
                     (url "https://github.com/sqlmapproject/sqlmap")
                     (commit "fee62ae14c15e555662b1d1099304add3eff3b1c")))
               (sha256
-               (base32 "1v1v2dsawi1piid4787w35zn9sxpbdik944jkf44c6r9wisysgfy"))))
+               (base32 "1kci95aavjqcprzg5dw2sjcd7cd93ljn4sxvnqnf5hrh6rh8h2ig"))))
     (build-system trivial-build-system)
     (arguments
      `(#:modules ((guix build utils))
