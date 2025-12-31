@@ -1,3 +1,6 @@
+;;; SPDX-License-Identifier: GPL-3.0-or-later
+;;; Copyright © 2025 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
+
 (define-module (sagittarius packages clojure)
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (gnu packages bash)
@@ -14,7 +17,7 @@
   #:use-module (guix git-download)
   #:use-module (guix packages)
   #:use-module (guix utils)
-  #:use-module (nonguix build-system binary))
+  #:use-module (sagittarius build-system binary))
 
 (define-public clojure-lsp
   (package
