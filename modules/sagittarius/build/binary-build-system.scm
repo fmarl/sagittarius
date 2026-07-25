@@ -20,17 +20,6 @@
 ;;
 ;; Code:
 
-
-(define (64-bit? file)
-  "Return true if ELF file is in 64-bit format, false otherwise.
-See https://en.wikipedia.org/wiki/Executable_and_Linkable_Format#File_header."
-  (with-input-from-file file
-    (lambda ()
-      (= 2
-         (array-ref (get-bytevector-n (current-input-port) 5) 4)))
-    #:binary #t))
-
-
 (define (new-install)
   "Return the copy-build-system `install' procedure."
   (@@ (guix build copy-build-system) install))
@@ -134,21 +123,14 @@ The inputs are optional when the file is an executable."
 
   (when (and patchelf-plan
              (not (null? patchelf-plan)))
-    (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so")))
-          (interpreter32 (car (find-files (assoc-ref inputs "libc32") "ld-linux.*\\.so"))))
+    (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so"))))
       (for-each
        (lambda (plan)
          (match plan
            ((binary runpath)
-            (binary-patch binary (if (64-bit? binary)
-                                     interpreter
-                                     interpreter32)
-                          runpath))
+            (binary-patch binary interpreter runpath))
            ((binary)
-            (binary-patch binary (if (64-bit? binary)
-                                     interpreter
-                                     interpreter32)
-                          #f))))
+            (binary-patch binary interpreter #f))))
        patchelf-plan)))
   #t)
 

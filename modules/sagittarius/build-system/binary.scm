@@ -36,22 +36,8 @@
   `((sagittarius build binary-build-system)
     ,@%copy-build-system-modules))
 
-(define-public (to32 package64)
-  "Build package for i686-linux.
-Only x86_64-linux and i686-linux are supported.
-- If i686-linux, return the package unchanged.
-- If x86_64-linux, return the 32-bit version of the package."
-  (match (%current-system)
-    ("x86_64-linux"
-     (package
-       (inherit package64)
-       (arguments `(#:system "i686-linux"
-                    ,@(package-arguments package64)))))
-    (_ package64)))
-
 (define (default-patchelf)
   "Return the default patchelf package."
-
   ;; Do not use `@' to avoid introducing circular dependencies.
   (let ((module (resolve-interface '(gnu packages elf))))
     ;; Use the older 0.16 version due to an upstream bug which can segfault
@@ -87,10 +73,7 @@ Only x86_64-linux and i686-linux are supported.
                         ;; Keep the standard inputs of 'gnu-build-system'.
                         ,@(standard-packages)))
          (build-inputs `(("patchelf" ,patchelf)
-                         ,@native-inputs
-                         ;; If current system is i686, the *32 packages will be the
-                         ;; same as the non-32, but that's OK.
-                         ("libc32" ,(to32 glibc))))
+                         ,@native-inputs))
          (outputs outputs)
          (build binary-build)
          (arguments (strip-keyword-arguments private-keywords arguments)))))

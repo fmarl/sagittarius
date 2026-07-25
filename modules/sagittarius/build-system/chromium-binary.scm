@@ -137,10 +137,7 @@
          (system system)
          (host-inputs host-inputs)
          (build-inputs `(("patchelf" ,patchelf)
-                         ,@native-inputs
-                         ;; If current system is i686, the *32 packages will be the
-                         ;; same as the non-32, but that's OK.
-                         ("libc32" ,(to32 glibc))))
+                         ,@native-inputs))
          (outputs outputs)
          (build chromium-binary-build)
          (arguments (append
