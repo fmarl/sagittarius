@@ -32,8 +32,7 @@
   #:use-module (guix packages)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
-  #:use-module (nonguix build-system binary)
-  #:use-module (nonguix utils)
+  #:use-module (sagittarius build-system binary)
   #:export (%chromium-binary-build-system-modules
             lower
             chromium-binary-build

@@ -4,7 +4,7 @@
 
 (define-module (sagittarius build chromium-binary-build-system)
   #:use-module ((guix build gnu-build-system) #:prefix gnu:)
-  #:use-module ((nonguix build binary-build-system) #:prefix binary:)
+  #:use-module ((sagittarius build binary-build-system) #:prefix binary:)
   #:use-module (guix build utils)
   #:use-module (ice-9 ftw)
   #:use-module (ice-9 match)
