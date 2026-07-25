@@ -168,8 +168,7 @@
                        (system (%current-system))
                        (imported-modules %chromium-binary-build-system-modules)
                        (modules '((sagittarius build chromium-binary-build-system)
-                                  (guix build utils)
-                                  (sagittarius build utils)))
+                                  (guix build utils))
                        (substitutable? #t)
                        allowed-references
                        disallowed-references)
