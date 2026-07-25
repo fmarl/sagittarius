@@ -51,8 +51,8 @@
 
 (define %chromium-binary-build-system-modules
   ;; Build-side modules imported by default.
-  `((nonguix build chromium-binary-build-system)
-    (nonguix build utils)
+  `((sagittarius build chromium-binary-build-system)
+    (sagittarius build utils)
     ,@%binary-build-system-modules))
 
 (define (build-patchelf-plan wrapper-plan inputs)
@@ -163,13 +163,13 @@
                        (strip-flags ''("--strip-debug"))
                        (strip-directories ''("lib" "lib64" "libexec"
                                              "bin" "sbin"))
-                       (phases '(@ (nonguix build chromium-binary-build-system)
+                       (phases '(@ (sagittarius build chromium-binary-build-system)
                                    %standard-phases))
                        (system (%current-system))
                        (imported-modules %chromium-binary-build-system-modules)
-                       (modules '((nonguix build chromium-binary-build-system)
+                       (modules '((sagittarius build chromium-binary-build-system)
                                   (guix build utils)
-                                  (nonguix build utils)))
+                                  (sagittarius build utils)))
                        (substitutable? #t)
                        allowed-references
                        disallowed-references)
