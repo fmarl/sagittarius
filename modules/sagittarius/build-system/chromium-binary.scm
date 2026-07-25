@@ -52,7 +52,6 @@
 (define %chromium-binary-build-system-modules
   ;; Build-side modules imported by default.
   `((sagittarius build chromium-binary-build-system)
-    (sagittarius build utils)
     ,@%binary-build-system-modules))
 
 (define (build-patchelf-plan wrapper-plan inputs)
