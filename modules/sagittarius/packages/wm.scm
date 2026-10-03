@@ -45,8 +45,7 @@
       #~(list "-Dpie"
               "-Dxwayland"
               "--search-prefix"
-              #$(or (this-package-input "libinput")
-                    (this-package-input "libinput-minimal"))
+              #$(this-package-input "libinput-minimal")
               "--search-prefix"
               #$(this-package-input "eudev"))
       #:phases
@@ -62,10 +61,9 @@
             #$(rename-zon-dependencies %river-zig-dependencies #:revert? #t))
           (add-after 'install 'install-wayland-session
             (lambda _
-              (let ((wayland-sessions (string-append #$output
-                                       "/share/wayland-sessions")))
-                (mkdir-p wayland-sessions)
-                (install-file "contrib/river.desktop" wayland-sessions)))))))
+              (install-file "contrib/river.desktop"
+                            (string-append #$output
+                                           "/share/wayland-sessions")))))))
     (inputs (list libevdev
                   eudev
                   zig-translate-c
@@ -77,9 +75,9 @@
     (home-page "https://isaacfreund.com/software/river/")
     (synopsis "Dynamic tiling Wayland compositor")
     (description
-     "River is a dynamic tiling Wayland compositor with flexible
-	runtime configuration.  It can run nested in an X11/Wayland session or also
-	directly from a tty using KMS/DRM.")
+     "River is a dynamic tiling Wayland compositor with flexible runtime
+configuration.  It can run nested in an X11/Wayland session or also directly
+from a tty using KMS/DRM.")
     (license license:gpl3)))
 
 (define-public nucleotide
