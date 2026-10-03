@@ -25,7 +25,7 @@
 (define-public river-0.4
   (package
     (name "river")
-    (version "0.4.7")
+    (version "0.4.8")
     (source
      (origin
        (method git-fetch)
@@ -34,7 +34,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1mq6c2ajr7dwiy4s9r8sh5b9b2q9ggj0bq4cd46131hi5j7vhfxq"))))
+        (base32 "0xj31k5hjdll01rq0z47r61whc3zcv0krwcfczcdhx9cvp4qd8xy"))))
     (build-system zig-build-system)
     (arguments
      (list
