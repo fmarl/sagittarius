@@ -15,6 +15,7 @@
   #:use-module (guix git-download)
   #:use-module (guix packages)
   #:use-module (guix search-paths)
+  #:use-module (guix utils)
   #:use-module ((guix licenses) #:prefix license:))
 
 (define wlroots-X11
@@ -22,7 +23,9 @@
     (inherit wlroots)
     (name "wlroots-X11")
     (arguments
-     `(#:configure-flags '("-Dbackends=['drm', 'libinput', 'x11']")))
+     (substitute-keyword-arguments (package-arguments wlroots)
+       ((#:configure-flags flags #~'())
+        #~(cons "-Dbackends=['drm', 'libinput', 'x11']" #$flags))))
     (propagated-inputs (modify-inputs (package-propagated-inputs wlroots)
                          (prepend xcb-util-renderutil)))))
 
