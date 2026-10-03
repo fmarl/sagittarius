@@ -2,7 +2,8 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius build locked)
-  #:use-module (landlock)
+  ;; Only available in the wrappers, not when the channel is compiled
+  #:autoload (landlock) (%landlock-read-access landlock-path landlock-exec)
   #:use-module (srfi srfi-1)
   #:export (base-rules
             graphics-rules
