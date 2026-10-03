@@ -17,7 +17,38 @@
   #:use-module (guix packages)
   #:use-module (guix search-paths)
   #:use-module (guix utils)
-  #:use-module ((guix licenses) #:prefix license:))
+  #:use-module ((guix licenses) #:prefix license:)
+  #:export (rename-zon-dependencies))
+
+(define (zig-package-name dependency)
+  "Return the name of the package providing the build.zig.zon DEPENDENCY,
+e.g. \"zig-translate-c\" for \"translate_c\"."
+  (string-append "zig-" (string-map (lambda (c)
+                                      (if (char=? c #\_) #\- c))
+                                    dependency)))
+
+(define* (rename-zon-dependencies dependencies #:key revert?)
+  "Return a phase that renames DEPENDENCIES in build.zig.zon to the names of
+their packages, or back to their original names when REVERT? is true.
+
+'zig-build-system' stores each dependency under the name of its package, but
+build.zig refers to the original names, which must be restored before
+building."
+  (let ((renames
+         (map (lambda (dependency)
+                (let ((field (string-append "." dependency))
+                      (package-field (string-append
+                                      ".@\"" (zig-package-name dependency) "\"")))
+                  (if revert?
+                      (cons package-field field)
+                      (cons field package-field))))
+              dependencies)))
+    #~(lambda _
+        (for-each (lambda (rename)
+                    (substitute* "build.zig.zon"
+                      (((string-append "\\" (car rename)))
+                       (cdr rename))))
+                  '#$renames))))
 
 (define wlroots-X11
   (package
@@ -99,7 +130,8 @@
 
 (define-public zig-wlroots-for-river-0.4
   (let ((commit "7a18c03dca6afa0d80bd9e3a0619e5e5ccd18e20")
-        (revision "1"))
+        (revision "1")
+        (dependencies '("pixman" "wayland" "xkbcommon")))
     (package
       (name "zig-wlroots")
       (version (git-version "0.20.1" revision commit))
@@ -124,23 +156,9 @@
         #:phases
         #~(modify-phases %standard-phases
             (add-after 'unpack 'prepare-build.zig.zon
-              (lambda _
-                (substitute* "build.zig.zon"
-                  (("\\.pixman")
-                   ".@\"zig-pixman\"")
-                  (("\\.wayland")
-                   ".@\"zig-wayland\"")
-                  (("\\.xkbcommon")
-                   ".@\"zig-xkbcommon\""))))
+              #$(rename-zon-dependencies dependencies))
             (add-before 'build 'revert-build.zig.zon
-              (lambda _
-                (substitute* "build.zig.zon"
-                  (("\\.@\"zig-pixman\"")
-                   ".pixman")
-                  (("\\.@\"zig-wayland\"")
-                   ".wayland")
-                  (("\\.@\"zig-xkbcommon\"")
-                   ".xkbcommon")))))))
+              #$(rename-zon-dependencies dependencies #:revert? #t)))))
       (propagated-inputs (list wlroots-X11 zig-pixman
                                zig-wayland-for-river-0.4
                                zig-xkbcommon-for-river-0.4))

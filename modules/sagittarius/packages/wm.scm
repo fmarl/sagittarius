@@ -18,6 +18,10 @@
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (sagittarius packages zig-xyz))
 
+(define %river-zig-dependencies
+  ;; Dependencies as named in build.zig.zon.
+  '("pixman" "translate_c" "wayland" "wlroots" "xkbcommon"))
+
 (define-public river-0.4
   (package
     (name "river")
@@ -53,31 +57,9 @@
                 (("/bin/sh")
                  (which "sh")))))
           (add-after 'unpack 'prepare-build.zig.zon
-            (lambda _
-              (substitute* "build.zig.zon"
-                (("\\.pixman")
-                 ".@\"zig-pixman\"")
-                (("\\.translate_c")
-                 ".@\"zig-translate-c\"")
-                (("\\.wayland")
-                 ".@\"zig-wayland\"")
-                (("\\.wlroots")
-                 ".@\"zig-wlroots\"")
-                (("\\.xkbcommon")
-                 ".@\"zig-xkbcommon\""))))
+            #$(rename-zon-dependencies %river-zig-dependencies))
           (add-before 'build 'revert-build.zig.zon
-            (lambda _
-              (substitute* "build.zig.zon"
-                (("\\.@\"zig-pixman\"")
-                 ".pixman")
-                (("\\.@\"zig-translate-c\"")
-                 ".translate_c")
-                (("\\.@\"zig-wayland\"")
-                 ".wayland")
-                (("\\.@\"zig-wlroots\"")
-                 ".wlroots")
-                (("\\.@\"zig-xkbcommon\"")
-                 ".xkbcommon"))))
+            #$(rename-zon-dependencies %river-zig-dependencies #:revert? #t))
           (add-after 'install 'install-wayland-session
             (lambda _
               (let ((wayland-sessions (string-append #$output
