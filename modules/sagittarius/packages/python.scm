@@ -2,15 +2,14 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius packages python)
-  #:use-module ((guix licenses)
-                #:prefix license:)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-build)
   #:use-module (guix build-system pyproject)
+  #:use-module (guix gexp)
   #:use-module (guix git-download)
   #:use-module (guix packages)
-  #:use-module (guix gexp))
+  #:use-module ((guix licenses) #:prefix license:))
 
 (define-public python-virtme-ng
   (package
@@ -28,13 +27,17 @@
     (build-system pyproject-build-system)
     (arguments
      (list
-      #:tests? #f
+      #:tests? #f                       ;no test suite
       #:phases
       #~(modify-phases %standard-phases
-          (delete 'sanity-check))))
+          (add-after 'unpack 'remove-mcp-entry-point
+            (lambda _
+              ;; Needs the optional "mcp" extra, but python-mcp in Guix lacks
+              ;; some of its dependencies.
+              (substitute* "setup.py"
+                ((".*\"vng-mcp = .*") "")))))))
     (propagated-inputs (list python-argcomplete python-requests))
-    (native-inputs (list python-argcomplete python-argparse-manpage
-                         python-requests python-setuptools))
+    (native-inputs (list python-argparse-manpage python-setuptools))
     (home-page "https://github.com/arighi/virtme-ng")
     (synopsis
      "Build and run a kernel inside a virtualized snapshot of your live system")
