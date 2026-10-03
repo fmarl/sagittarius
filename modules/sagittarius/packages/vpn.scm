@@ -4,6 +4,7 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius packages vpn)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages networking)
   #:use-module (guix download)
@@ -78,7 +79,7 @@
                   `("LD_LIBRARY_PATH" = (,share)))
                 (wrap-program (string-append bin "/mullvad-daemon")
                   `("MULLVAD_RESOURCE_DIR" = (,resources)))))))))
-    (inputs (list iputils libnotify))
+    (inputs (list bash-minimal iputils libnotify))
     (supported-systems '("x86_64-linux"))
     (home-page "https://mullvad.net")
     (synopsis "Mullvad VPN client app for desktop")
