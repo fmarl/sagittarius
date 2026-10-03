@@ -81,6 +81,7 @@
                   `("MULLVAD_RESOURCE_DIR" = (,resources)))))))))
     (inputs (list bash-minimal iputils libnotify))
     (supported-systems '("x86_64-linux"))
+    (properties '((upstream-name . "MullvadVPN")))
     (home-page "https://mullvad.net")
     (synopsis "Mullvad VPN client app for desktop")
     (description
