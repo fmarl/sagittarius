@@ -8,15 +8,14 @@
                          landlock-port
                          landlock-exec)
   #:use-module (ice-9 match)
-  #:use-module (ice-9 rdelim)
+  #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
-  #:use-module (srfi srfi-11)
   #:use-module (srfi srfi-26)
   #:use-module (web uri)
   #:export (home-path
             config-path
             cache-path
-            state-path
+            mail-directory
             user-directory
             read-only
             read-write
@@ -62,26 +61,23 @@
 (define (runtime-path name)
   (string-append (getenv "XDG_RUNTIME_DIR") "/" name))
 
+(define (mail-directory)
+  (or (getenv "MAILDIR") (home-path "Mail")))
+
 (define (user-directory name default)
-  "Return the XDG user directory NAME, such as \"DOWNLOAD\", from
-user-dirs.dirs, or DEFAULT in the home directory."
-  (define prefix (string-append "XDG_" name "_DIR=\""))
-  (define (expand value)
-    (if (string-prefix? "$HOME" value)
-        (string-append (getenv "HOME") (substring value 5))
-        value))
-  (let ((file (config-path "user-dirs.dirs")))
-    (or (and (file-exists? file)
-             (call-with-input-file file
-               (lambda (port)
-                 (let loop ()
-                   (match (read-line port)
-                     ((? eof-object?) #f)
-                     ((? (cut string-prefix? prefix <>) line)
-                      (expand (string-drop-right
-                               (string-drop line (string-length prefix)) 1)))
-                     (_ (loop)))))))
-        (home-path default))))
+  "Return the XDG user directory NAME, such as \"DOWNLOAD\", or DEFAULT, both
+in the home directory."
+  (let* ((prefix (string-append "XDG_" name "_DIR=\"$HOME/"))
+         (file (config-path "user-dirs.dirs"))
+         (line (and (file-exists? file)
+                    (find (cut string-prefix? prefix <>)
+                          (string-split (call-with-input-file file
+                                          get-string-all)
+                                        #\newline)))))
+    (home-path (if line
+                   (string-trim-right (string-drop line (string-length prefix))
+                                      #\")
+                   default))))
 
 (define (read-only path)
   (landlock-path path %read #:optional? #t))
@@ -110,7 +106,7 @@ directory first if CREATE?."
         (read-only "/sys")))
 
 (define (device-rules . devices)
-  "Allow using DEVICES, those that exist."
+  "Allow using those of DEVICES that exist."
   (map (cut landlock-path <> '(read-file write-file ioctl-dev) #:optional? #t)
        devices))
 
@@ -136,7 +132,7 @@ directory first if CREATE?."
 
 (define (argument-path argument)
   (cond ((string-prefix? "file://" argument)
-         (uri-decode (substring argument (string-length "file://"))))
+         (uri-decode (string-drop argument (string-length "file://"))))
         ((string-prefix? "-" argument) #f)
         (else argument)))
 
@@ -150,20 +146,24 @@ file:// URIs."
                        (read-only path))))
               arguments))
 
+(define (option-value option)
+  "Return the value of OPTION, KEY=VALUE or a bare value, without a unix:
+prefix."
+  (let ((value (match (string-index option #\=)
+                 (#f option)
+                 (index (string-drop option (1+ index))))))
+    (if (string-prefix? "unix:" value)
+        (string-drop value (string-length "unix:"))
+        value)))
+
+(define (file-name? value)
+  (and (string-prefix? "/" value)
+       (not (string-any char-whitespace? value))))
+
 (define (option-paths argument)
-  "Return the absolute file names in ARGUMENT, a file name or comma-separated
-KEY=VALUE options as QEMU takes them, possibly with a unix: prefix."
-  (filter-map (lambda (option)
-                (let* ((value (match (string-index option #\=)
-                                (#f option)
-                                (index (substring option (1+ index)))))
-                       (value (if (string-prefix? "unix:" value)
-                                  (substring value (string-length "unix:"))
-                                  value)))
-                  (and (string-prefix? "/" value)
-                       (not (string-any char-whitespace? value))
-                       value)))
-              (string-split argument #\,)))
+  "Return the file names in ARGUMENT, a file name or comma-separated options
+as QEMU takes them."
+  (filter file-name? (map option-value (string-split argument #\,))))
 
 (define (path-rule path)
   "Allow using PATH as its type requires: reading and writing a file, using a
@@ -196,10 +196,10 @@ device or a socket, or creating a socket."
   (list (read-write (or (getenv "GNUPGHOME") (home-path ".gnupg")))
         (landlock-path (runtime-path "gnupg") '(resolve-unix) #:optional? #t)))
 
-(define (share-socket! socket name)
+(define (share-socket! socket name announce!)
   "Hard-link SOCKET into the directory NAME of its own, so that the program
-needs no access to the other sockets in XDG_RUNTIME_DIR.  Return the link and
-the rules for it, or #f and no rules if SOCKET doesn't exist."
+needs no access to the other sockets in XDG_RUNTIME_DIR, call ANNOUNCE! with
+the link and return the rules for it.  Return no rules if SOCKET is missing."
   (if (file-exists? socket)
       (let* ((directory (runtime-path (string-append "locked/" name)))
              (shared (string-append directory "/" (basename socket)))
@@ -207,27 +207,24 @@ the rules for it, or #f and no rules if SOCKET doesn't exist."
         (mkdir-p directory)
         (link socket new)
         (rename-file new shared)
-        (values shared (list (landlock-path directory '(resolve-unix)))))
-      (values #f '())))
+        (announce! shared)
+        (list (landlock-path directory '(resolve-unix))))
+      '()))
 
 (define (share-wayland!)
   (let ((display (or (getenv "WAYLAND_DISPLAY") "wayland-0")))
-    (let-values (((shared rules)
-                  (share-socket! (if (string-prefix? "/" display)
-                                     display
-                                     (runtime-path display))
-                                 "wayland")))
-      (when shared
-        (setenv "WAYLAND_DISPLAY" shared))
-      rules)))
+    (share-socket! (if (string-prefix? "/" display)
+                       display
+                       (runtime-path display))
+                   "wayland"
+                   (cut setenv "WAYLAND_DISPLAY" <>))))
 
 (define (share-pipewire!)
-  (let-values (((shared rules)
-                (share-socket! (runtime-path "pipewire-0") "pipewire")))
-    (when shared
-      (setenv "PIPEWIRE_RUNTIME_DIR" (dirname shared))
-      (setenv "PIPEWIRE_REMOTE" (basename shared)))
-    rules))
+  (share-socket! (runtime-path "pipewire-0")
+                 "pipewire"
+                 (lambda (shared)
+                   (setenv "PIPEWIRE_RUNTIME_DIR" (dirname shared))
+                   (setenv "PIPEWIRE_REMOTE" (basename shared)))))
 
 (define (private-runtime-directory! program)
   "Point XDG_RUNTIME_DIR to a directory of PROGRAM's own and return the rules
@@ -251,11 +248,12 @@ variables to set."
   (for-each (match-lambda
               ((name . value) (setenv name value)))
             environment)
-  (let* ((rules (append rules
-                        (if wayland? (share-wayland!) '())
-                        (if pipewire? (share-pipewire!) '())))
-         (rules (if runtime-directory?
-                    (append rules (private-runtime-directory! program))
-                    rules)))
-    (landlock-exec rules (cons program arguments)
+  ;; The sockets are found in XDG_RUNTIME_DIR before it is replaced
+  (let* ((socket-rules (append (if wayland? (share-wayland!) '())
+                               (if pipewire? (share-pipewire!) '())))
+         (runtime-rules (if runtime-directory?
+                            (private-runtime-directory! program)
+                            '())))
+    (landlock-exec (append rules socket-rules runtime-rules)
+                   (cons program arguments)
                    #:scope '(signal abstract-unix-socket))))
