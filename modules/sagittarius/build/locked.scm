@@ -22,6 +22,7 @@
             base-rules
             graphics-rules
             device-rules
+            usb-rules
             font-rules
             config-rules
             state-rules
@@ -109,6 +110,15 @@ directory first if CREATE?."
   "Allow using those of DEVICES that exist."
   (map (cut landlock-path <> '(read-file write-file ioctl-dev) #:optional? #t)
        devices))
+
+(define (usb-rules arguments)
+  "Allow using the USB devices that file permissions allow if ARGUMENTS give
+the machine a USB controller, as QEMU takes them."
+  (if (any (cut string-contains <> "usb=on") arguments)
+      (list (landlock-path "/dev/bus/usb"
+                           '(read-file write-file read-dir ioctl-dev)
+                           #:optional? #t))
+      '()))
 
 (define (font-rules)
   (list (read-only "/var/cache/fontconfig")

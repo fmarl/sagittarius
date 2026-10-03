@@ -16,4 +16,5 @@
                                      (device-rules "/dev/kvm"
                                                    "/dev/vhost-vsock")
                                      (list (read-only "/sys"))
-                                     (option-path-rules arguments)))))))
+                                     (option-path-rules arguments)
+                                     (usb-rules arguments)))))))
