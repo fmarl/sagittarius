@@ -63,10 +63,7 @@
               (let ((old-exe "/opt/Mullvad VPN/mullvad-vpn"))
                 (patch-shebang (string-append "." old-exe))
                 (substitute* "usr/share/applications/mullvad-vpn.desktop"
-                  (("^Icon=mullvad-vpn")
-                   (string-append "Icon=" #$output "/share/icons/hicolor"
-                                  "/1024x1024/apps/mullvad-vpn.png"))
-                  (((string-append "^Exec=" old-exe))
+                  (((string-append "^Exec=\"?" old-exe "\"?"))
                    (string-append "Exec=" #$output "/bin/mullvad-vpn"))))))
           (add-before 'install-wrapper 'symlink-entrypoint
             (lambda _
