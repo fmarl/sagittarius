@@ -28,7 +28,6 @@
     (build-system chromium-binary-build-system)
     (arguments
      (list
-      #:validate-runpath? #f ;TODO: fails on wrapped binary and included other files
       #:wrapper-plan
       #~(append
          (list "usr/bin/mullvad"
