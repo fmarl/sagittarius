@@ -20,10 +20,12 @@
 (define (mullvad-shepherd-service config)
   (list (shepherd-service
          (provision '(mullvad))
+         (requirement '(networking))
          (documentation "Mullvad VPN daemon")
          (start #~(make-forkexec-constructor
                    (list #$(file-append (mullvad-configuration-package config)
-                                        "/bin/mullvad-daemon"))))
+                                        "/bin/mullvad-daemon"))
+                   #:log-file "/var/log/mullvad-daemon.log"))
          (stop #~(make-kill-destructor)))))
 
 (define mullvad-service-type
