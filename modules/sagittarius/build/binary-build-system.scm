@@ -7,6 +7,7 @@
 
 (define-module (sagittarius build binary-build-system)
   #:use-module ((guix build gnu-build-system) #:prefix gnu:)
+  #:use-module ((guix build copy-build-system) #:prefix copy:)
   #:use-module (guix build utils)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
@@ -20,162 +21,84 @@
 ;;
 ;; Code:
 
-(define (new-install)
-  "Return the copy-build-system `install' procedure."
-  (@@ (guix build copy-build-system) install))
-
-(define* (old-install #:key install-plan outputs #:allow-other-keys)
-  "Copy files from the \"source\" build input to the \"out\" output according to INSTALL-PLAN.
-
-An INSTALL-PLAN is made of three elements:
-
-- A source path which is a file or directory from the \"source\" build input.
-- Patterns of the files to copy (only useful if the source path is a directory).
-- The target destination.
-
-If the target ends with a slash, it represents the target directory.  If not, it
-represent the target full path, which only makes sense for single files."
-  (define (install-file file target)
-    (let ((target (string-append (assoc-ref outputs "out")
-                                 "/" target
-                                 (if (string-suffix? "/" target)
-                                     (string-append "/" file)
-                                     ""))))
-      (mkdir-p (dirname target))
-      (copy-file file target)))
-
-  (define (install-file-pattern pattern target)
-    (for-each
-      (lambda (file)
-        (install-file file target))
-      (find-files "." pattern)))
-
-  (define (install plan)
-    (match plan
-      ((file-or-directory files target)
-       (if (file-is-directory? file-or-directory)
-           (with-directory-excursion file-or-directory
-             (for-each
-              (lambda (pattern)
-                (install-file-pattern pattern target))
-              files))
-           (install-file file-or-directory target)))))
-
-  (for-each install install-plan)
-  #t)
-
-(define* (install #:key install-plan outputs #:allow-other-keys)
-  (define (install-old-format)
-     (warn "Install-plan format deprecated.
-Please update to the format of the copy-build-system.")
-     (old-install #:install-plan install-plan #:outputs outputs))
-  (match (car install-plan)
-    ((source (. matches) target)
-     (install-old-format))
-    ((source #f target)
-     (install-old-format))
-    (_ ((new-install) #:install-plan install-plan #:outputs outputs))))
-
 (define* (patchelf #:key inputs outputs patchelf-plan #:allow-other-keys)
   "Set the interpreter and the RPATH of files as per the PATCHELF-PLAN.
 
 The PATCHELF-PLAN elements are lists of:
 
 - The file to patch.
-- The inputs (as strings) to include in the rpath, e.g. \"mesa\".
+- The inputs (as strings) to include in the rpath, e.g. \"mesa\".  An input
+  can also be a list of its name and the sub-directory to use instead of
+  \"/lib\".
 
 Both executables and dynamic libraries are accepted.
 The inputs are optional when the file is an executable."
-  (define (binary-patch binary interpreter runpath)
+  (define* (rpath-entry name #:optional (sub-directory "/lib"))
+    (match (or (assoc-ref outputs name) (assoc-ref inputs name))
+      (#f (error (format #f "`~a' not found among the inputs nor the outputs."
+                         name)))
+      (directory (string-append directory sub-directory))))
 
-    (define* (maybe-make-rpath entries name #:optional (extra-path "/lib"))
-      (let ((entry (assoc-ref entries name)))
-        (if entry
-            (string-append entry extra-path)
-            #f)))
-
-    (define* (make-rpath name #:optional (extra-path "/lib"))
-      (or (maybe-make-rpath outputs name extra-path)
-          (maybe-make-rpath inputs  name extra-path)
-          (error (format #f "`~a' not found among the inputs nor the outputs."
-                         name))))
-
+  (define (patch-binary interpreter binary runpath)
     (unless (string-contains binary ".so")
       ;; Use `system*' and not `invoke' since this may raise an error if
       ;; library does not end with .so.
       (system* "patchelf" "--set-interpreter" interpreter binary))
-    (when runpath
-      (let ((rpath (string-join
-                    (map
-                     (match-lambda
-                       ((name extra-path)
-                        (make-rpath name extra-path))
-                       (name
-                        (make-rpath name)))
-                     runpath)
-                    ":")))
-        (invoke "patchelf" "--set-rpath" rpath binary)))
-    #t)
+    (unless (null? runpath)
+      (invoke "patchelf" "--set-rpath"
+              (string-join (map (match-lambda
+                                  ((name sub-directory)
+                                   (rpath-entry name sub-directory))
+                                  (name
+                                   (rpath-entry name)))
+                                runpath)
+                           ":")
+              binary)))
 
-  (display "Using patchelf version: ")
-  (force-output)
   (invoke "patchelf" "--version")
+  (when (pair? patchelf-plan)
+    (let ((interpreter (car (find-files (assoc-ref inputs "libc")
+                                        "ld-linux.*\\.so"))))
+      (for-each (match-lambda
+                  ((binary runpath)
+                   (patch-binary interpreter binary runpath))
+                  ((binary)
+                   (patch-binary interpreter binary '())))
+                patchelf-plan))))
 
-  (when (and patchelf-plan
-             (not (null? patchelf-plan)))
-    (let ((interpreter (car (find-files (assoc-ref inputs "libc") "ld-linux.*\\.so"))))
-      (for-each
-       (lambda (plan)
-         (match plan
-           ((binary runpath)
-            (binary-patch binary interpreter runpath))
-           ((binary)
-            (binary-patch binary interpreter #f))))
-       patchelf-plan)))
-  #t)
-
-(define (deb-file? binary-file)
-  (string-suffix? ".deb" binary-file))
+(define (deb-file? file)
+  (string-suffix? ".deb" file))
 
 (define (unpack-deb deb-file)
-  (invoke "ar" "x" deb-file)
-  (let ((data-file (find file-exists?
-                         (list "data.tar.xz" "data.tar.gz"
-                               "data.tar.bz2"))))
-    (invoke "tar" "xvf" data-file)
-    (invoke "rm" "-rfv" "control.tar.gz"
-            data-file
-            deb-file
-            "debian-binary")))
+  "Extract the data archive of DEB-FILE into the current directory, then
+delete DEB-FILE."
+  (define members ".deb-members")
 
-(define* (binary-unpack #:key source #:allow-other-keys)
-  (let* ((files (filter (lambda (f)
-                          (not (string=? (basename f) "environment-variables")))
-                        (find-files (getcwd))))
-         (binary-file (car files)))
-    (when (= 1 (length files))
-      (mkdir "binary")
-      (chdir "binary")
-      (match binary-file
-        ((? deb-file?) (unpack-deb binary-file))
-        (_
-         (begin
-           (format #t "Unknown file type: ~a~%" (basename binary-file))
-           ;; Cleanup after ourselves
-           (chdir "..")
-           (rmdir "binary")))))))
+  (mkdir members)
+  (with-directory-excursion members
+    (invoke "ar" "x" deb-file))
+  (invoke "tar" "xvf" (car (find-files members "^data\\.tar")))
+  (delete-file-recursively members)
+  (delete-file deb-file))
+
+(define (binary-unpack . _)
+  "When the unpacked source consists of a single .deb file, extract its
+contents into the \"binary\" directory and change to it."
+  (match (remove (lambda (file)
+                   (string=? (basename file) "environment-variables"))
+                 (find-files (getcwd)))
+    (((? deb-file? deb-file))
+     (mkdir "binary")
+     (chdir "binary")
+     (unpack-deb deb-file))
+    ((file)
+     (format #t "Unknown file type: ~a~%" (basename file)))
+    (_ #t)))
 
 (define %standard-phases
-  ;; Everything is as with the GNU Build System except for the `binary-unpack',
-  ;; `configure', `build', `check' and `install' phases.
-  (modify-phases gnu:%standard-phases
+  (modify-phases copy:%standard-phases
     (add-after 'unpack 'binary-unpack binary-unpack)
-    (delete 'bootstrap)
-    (delete 'configure)
-    (delete 'build)
-    (delete 'check)
-    (add-before 'install 'patchelf patchelf)
-    (replace 'install install)))
+    (add-before 'install 'patchelf patchelf)))
 
 (define* (binary-build #:key inputs (phases %standard-phases)
                        #:allow-other-keys #:rest args)

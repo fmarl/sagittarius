@@ -21,20 +21,17 @@
   #:use-module (gnu packages xdisorg)
   #:use-module (gnu packages xorg)
   #:use-module (gnu packages xml)
-  #:use-module (guix store)
   #:use-module (guix utils)
   #:use-module (guix gexp)
-  #:use-module (guix monads)
-  #:use-module (guix derivations)
-  #:use-module (guix search-paths)
   #:use-module (guix build-system)
-  #:use-module (guix build-system gnu)
   #:use-module (guix packages)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
-  #:use-module (sagittarius build-system binary)
+  #:use-module ((sagittarius build-system binary)
+                #:select ((lower . binary-lower)
+                          binary-build
+                          %binary-build-system-modules))
   #:export (%chromium-binary-build-system-modules
-            lower
             chromium-binary-build
             chromium-binary-build-system))
 
@@ -46,170 +43,127 @@
 ;;
 ;; Code:
 
-(define add-input-labels
-  (@@ (guix packages) add-input-labels))
+(define (add-input-labels . inputs)
+  "Return INPUTS, each a package or a list of a package and an output,
+labeled with their package names."
+  (map (match-lambda
+         ((package output)
+          (list (package-name package) package output))
+         (package
+          (list (package-name package) package)))
+       inputs))
 
 (define %chromium-binary-build-system-modules
-  ;; Build-side modules imported by default.
   `((sagittarius build chromium-binary-build-system)
     ,@%binary-build-system-modules))
 
-(define (build-patchelf-plan wrapper-plan inputs)
-  #~(let ((patchelf-inputs
-           (list #$@(map car inputs))))
-      (map (lambda (file)
-             ;; Either an entry in WRAPPER-PLAN is just a string which can be
-             ;; used directly, or it is a list where the second element is a
-             ;; list of additional inputs for patchelf-plan.
-             (if (list? file)
-                 (cons (car file) (list (append patchelf-inputs (cadr file))))
-                 (cons file (list patchelf-inputs))))
+(define (chromium-inputs)
+  "Return the inputs needed by Chromium based binaries."
+  (add-input-labels
+   alsa-lib
+   at-spi2-core
+   bash-minimal
+   cairo
+   cups
+   dbus
+   eudev
+   expat
+   fontconfig
+   freetype
+   `(,gcc "lib")
+   glib
+   gtk+
+   libdrm
+   libnotify
+   librsvg
+   libsecret
+   libx11
+   libxcb
+   libxcomposite
+   libxcursor
+   libxdamage
+   libxext
+   libxfixes
+   libxi
+   libxkbcommon
+   libxkbfile
+   libxrandr
+   libxrender
+   libxshmfence
+   libxtst
+   mesa
+   mit-krb5
+   nspr
+   nss
+   pango
+   pulseaudio
+   sqlcipher
+   xcb-util
+   xcb-util-image
+   xcb-util-keysyms
+   xcb-util-renderutil
+   xcb-util-wm
+   xdg-utils                            ;for xdg-open and xdg-email commands
+   zlib))
+
+(define* (lower name #:key (inputs '()) #:allow-other-keys #:rest arguments)
+  "Return the bag of `binary-build-system' for NAME, with the inputs needed by
+Chromium based binaries added."
+  (and=> (apply binary-lower name
+                #:inputs (append inputs (chromium-inputs))
+                (strip-keyword-arguments '(#:inputs) arguments))
+         (lambda (binary-bag)
+           (bag
+             (inherit binary-bag)
+             (build chromium-binary-build)
+             (arguments
+              `(,@(bag-arguments binary-bag)
+                #:wrap-inputs ,(alist-delete "source"
+                                             (bag-host-inputs binary-bag))))))))
+
+(define (wrapper-plan->patchelf-plan wrapper-plan inputs)
+  "Return a PATCHELF-PLAN adding INPUTS to the RPATH of each file in
+WRAPPER-PLAN.  Entries of WRAPPER-PLAN are file names or lists of a file name
+and additional inputs."
+  #~(let ((patchelf-inputs '#$(map car inputs)))
+      (map (lambda (entry)
+             (if (list? entry)
+                 (list (car entry) (append patchelf-inputs (cadr entry)))
+                 (list entry patchelf-inputs)))
            #$wrapper-plan)))
 
-(define* (lower name
-                #:key source inputs native-inputs outputs system target
-                (patchelf (default-patchelf))
-                (glibc (default-glibc))
-                #:allow-other-keys
-                #:rest arguments)
-  "Return a bag for NAME."
-  (define private-keywords
-    '(#:target #:patchelf #:inputs #:native-inputs))
-  (define host-inputs
-    (append
-     (if source
-         `(("source" ,source))
-         '())
-     inputs
-     ;; Inputs needed by the Electron.
-     (add-input-labels
-      alsa-lib
-      at-spi2-core
-      bash-minimal
-      cairo
-      cups
-      dbus
-      eudev
-      expat
-      fontconfig
-      freetype
-      `(,gcc "lib")
-      glib
-      gtk+
-      libdrm
-      libnotify
-      librsvg
-      libsecret
-      libx11
-      libxcb
-      libxcomposite
-      libxcursor
-      libxdamage
-      libxext
-      libxfixes
-      libxi
-      libxkbcommon
-      libxkbfile
-      libxrandr
-      libxrender
-      libxshmfence
-      libxtst
-      mesa
-      mit-krb5
-      nspr
-      nss
-      pango
-      pulseaudio
-      sqlcipher
-      xcb-util
-      xcb-util-image
-      xcb-util-keysyms
-      xcb-util-renderutil
-      xcb-util-wm
-      xdg-utils                         ;for xdg-open and xdg-email commands
-      zlib)
-     ;; Keep the standard inputs of 'gnu-build-system'.
-     (standard-packages)))
-
-  (and (not target)                     ;XXX: no cross-compilation
-       (bag
-         (name name)
-         (system system)
-         (host-inputs host-inputs)
-         (build-inputs `(("patchelf" ,patchelf)
-                         ,@native-inputs))
-         (outputs outputs)
-         (build chromium-binary-build)
-         (arguments (append
-                     (strip-keyword-arguments private-keywords arguments)
-                     (list #:wrap-inputs (alist-delete "source" host-inputs)))))))
-
 (define* (chromium-binary-build name inputs
-                       #:key
-		       guile source wrap-inputs
-                       (outputs '("out"))
-                       (wrapper-plan ''())
-                       (patchelf-plan ''())
-                       (install-plan ''(("." "./")))
-                       (search-paths '())
-                       (out-of-source? #t)
-                       (validate-runpath? #t)
-                       (patch-shebangs? #t)
-                       (strip-binaries? #t)
-                       (strip-flags ''("--strip-debug"))
-                       (strip-directories ''("lib" "lib64" "libexec"
-                                             "bin" "sbin"))
-                       (phases '(@ (sagittarius build chromium-binary-build-system)
-                                   %standard-phases))
-                       (system (%current-system))
-                       (imported-modules %chromium-binary-build-system-modules)
-                       (modules '((sagittarius build chromium-binary-build-system)
-                                  (guix build utils)))
-                       (substitutable? #t)
-                       allowed-references
-                       disallowed-references)
-  "Build SOURCE using binary-build-system.  WRAPPER-PLAN is a list of strings for
-files which patchelf will add the INPUTS (which implicitly includes the base
-packages needed for chromium-based binaries) to RPATH and wrap with needed
-environment variables.  Optionally, an entry can be a list with the first
-entry the file to be patched and the second a list of additional inputs for
-patchelf, like PATCHELF-PLAN in binary-build-system.  PATCHELF-PLAN itself is
-ignored if WRAPPER-PLAN is not '()."
-  (define builder
-    (with-imported-modules imported-modules
-      #~(begin
-	  (use-modules #$@modules)
-
-	  #$(with-build-variables inputs outputs
-	      #~(chromium-binary-build #:source #+source
-			      #:system #$system
-			      #:outputs %outputs
-			      #:inputs %build-inputs
-			      #:patchelf-plan
-                              #$(if (equal? wrapper-plan ''())
-                                    patchelf-plan
-                                    (build-patchelf-plan wrapper-plan
-                                                         wrap-inputs))
-			      #:install-plan #$install-plan
-			      #:search-paths '#$(map search-path-specification->sexp
-						     search-paths)
-			      #:phases #$phases
-			      #:out-of-source? #$out-of-source?
-			      #:validate-runpath? #$validate-runpath?
-			      #:patch-shebangs? #$patch-shebangs?
-			      #:strip-binaries? #$strip-binaries?
-			      #:strip-flags #$strip-flags
-			      #:strip-directories #$strip-directories)))))
-
-  (mlet %store-monad ((guile (package->derivation (or guile (default-guile))
-                                                  system #:graft? #f)))
-    (gexp->derivation name builder
-                      #:system system
-                      #:target #f
-                      #:substitutable? substitutable?
-                      #:allowed-references allowed-references
-                      #:disallowed-references disallowed-references
-                      #:guile-for-build guile)))
+                                #:key wrap-inputs
+                                (wrapper-plan ''())
+                                (patchelf-plan ''())
+                                (phases
+                                 '(@ (sagittarius build
+                                                     chromium-binary-build-system)
+                                     %standard-phases))
+                                (imported-modules
+                                 %chromium-binary-build-system-modules)
+                                (modules
+                                 '((sagittarius build
+                                                chromium-binary-build-system)
+                                   ((sagittarius build binary-build-system)
+                                    #:select (binary-build))
+                                   (guix build utils)))
+                                #:allow-other-keys
+                                #:rest arguments)
+  "Build SOURCE with 'binary-build', adding WRAP-INPUTS to the RPATH of the
+files in WRAPPER-PLAN.  PATCHELF-PLAN is used only when WRAPPER-PLAN is empty."
+  (apply binary-build name inputs
+         #:patchelf-plan (if (equal? wrapper-plan ''())
+                             patchelf-plan
+                             (wrapper-plan->patchelf-plan wrapper-plan
+                                                          wrap-inputs))
+         #:phases phases
+         #:imported-modules imported-modules
+         #:modules modules
+         (strip-keyword-arguments '(#:wrap-inputs #:wrapper-plan
+                                    #:patchelf-plan #:phases
+                                    #:imported-modules #:modules)
+                                  arguments)))
 
 (define chromium-binary-build-system
   (build-system

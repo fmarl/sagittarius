@@ -3,13 +3,10 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius build chromium-binary-build-system)
-  #:use-module ((guix build gnu-build-system) #:prefix gnu:)
   #:use-module ((sagittarius build binary-build-system) #:prefix binary:)
   #:use-module (guix build utils)
   #:use-module (ice-9 ftw)
-  #:use-module (ice-9 match)
-  #:export (%standard-phases
-            chromium-binary-build))
+  #:export (%standard-phases))
 
 ;; Commentary:
 ;;
@@ -19,63 +16,33 @@
 ;; Code:
 
 (define* (install-wrapper #:key inputs outputs #:allow-other-keys)
+  "Wrap the executables in the \"bin\" directory of the \"out\" output so that
+they find the libraries and programs of INPUTS."
   (let* ((output (assoc-ref outputs "out"))
          (bin (string-append output "/bin"))
          (fontconfig-minimal (assoc-ref inputs "fontconfig-minimal"))
          (nss (assoc-ref inputs "nss"))
-         (wrap-inputs (map cdr inputs))
-         (lib-directories
-          (search-path-as-list '("lib") wrap-inputs))
-         (bin-directories
-          (search-path-as-list
-           '("bin" "sbin" "libexec")
-           wrap-inputs)))
+         (wrap-inputs (map cdr inputs)))
     (for-each
      (lambda (exe)
-       (display (string-append "Wrapping " exe "\n"))
+       (format #t "Wrapping ~a~%" exe)
        (wrap-program exe
          `("FONTCONFIG_PATH" ":" prefix
-           (,(string-join
-              (list
-               (string-append fontconfig-minimal "/etc/fonts")
-               output)
-              ":")))
+           (,(string-append fontconfig-minimal "/etc/fonts") ,output))
          `("PATH" ":" prefix
-           (,(string-join
-              (append
-               bin-directories
-               (list
-                bin))
-              ":")))
+           (,@(search-path-as-list '("bin" "sbin" "libexec") wrap-inputs)
+            ,bin))
          `("LD_LIBRARY_PATH" ":" prefix
-           (,(string-join
-              (append
-               lib-directories
-               (list
-                (string-append nss "/lib/nss")
-                output))
-              ":")))
-         ;; Give a hint to Electron-based apps to detect if Wayland or X11 should
-         ;; be used.
-         ;; NOTE: The env-var version of this CLI arg was added in Electron >=28
-         `("ELECTRON_OZONE_PLATFORM_HINT" ":" =
-           ("auto"))))
-     (map
-      (lambda (exe) (string-append bin "/" exe))
-      (filter
-       (lambda (exe) (not (string-prefix? "." exe)))
-       (scandir bin))))
-    #t))
+           (,@(search-path-as-list '("lib") wrap-inputs)
+            ,(string-append nss "/lib/nss")
+            ,output))
+         ;; Let Electron (>= 28) choose between Wayland and X11.
+         `("ELECTRON_OZONE_PLATFORM_HINT" = ("auto"))))
+     (map (lambda (exe) (string-append bin "/" exe))
+          (scandir bin (lambda (exe) (not (string-prefix? "." exe))))))))
 
 (define %standard-phases
-  ;; Everything is as with the binary-build-system except for the
-  ;; `install-wrapper' phase.
   (modify-phases binary:%standard-phases
     (add-after 'install 'install-wrapper install-wrapper)))
-
-(define* (chromium-binary-build #:key inputs (phases %standard-phases)
-                                #:allow-other-keys #:rest args)
-  "Build the given package, applying all of PHASES in order."
-  (apply gnu:gnu-build #:inputs inputs #:phases phases args))
 
 ;;; chromium-binary-build-system.scm ends here
