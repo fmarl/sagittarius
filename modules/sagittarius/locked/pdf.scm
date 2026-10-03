@@ -9,17 +9,13 @@
 (define-public zathura-locked
   (locked-package
    zathura
-   `(("zathura"
-      . ,(locked-program
-          "zathura"
-          #~(let ((arguments (cdr (command-line))))
-              ;; zathura-sandbox adds its own seccomp filter
-              (exec-locked #$(file-append zathura "/bin/zathura-sandbox")
-                           arguments
-                           (append (base-rules)
-                                   (font-rules)
-                                   (config-rules "zathura")
-                                   (config-rules "gtk-3.0")
-                                   (argument-rules arguments))
-                           #:wayland? #t
-                           #:environment '(("NO_AT_BRIDGE" . "1")))))))))
+   ;; zathura-sandbox adds its own seccomp filter
+   (list (locked-command "zathura" (file-append zathura "/bin/zathura-sandbox")
+                         #~(lambda (arguments)
+                             (append (base-rules)
+                                     (font-rules)
+                                     (config-rules "zathura")
+                                     (config-rules "gtk-3.0")
+                                     (argument-rules arguments)))
+                         #:wayland? #t
+                         #:environment '(("NO_AT_BRIDGE" . "1"))))))

@@ -9,15 +9,11 @@
 (define-public imv-locked
   (locked-package
    imv
-   `(("imv"
-      . ,(locked-program
-          "imv"
-          #~(let ((arguments (cdr (command-line))))
-              (exec-locked #$(file-append imv "/bin/imv-wayland")
-                           arguments
-                           (append (base-rules)
-                                   (graphics-rules)
-                                   (font-rules)
-                                   (config-rules "imv")
-                                   (argument-rules arguments))
-                           #:wayland? #t)))))))
+   (list (locked-command "imv" (file-append imv "/bin/imv-wayland")
+                         #~(lambda (arguments)
+                             (append (base-rules)
+                                     (graphics-rules)
+                                     (font-rules)
+                                     (config-rules "imv")
+                                     (argument-rules arguments)))
+                         #:wayland? #t))))

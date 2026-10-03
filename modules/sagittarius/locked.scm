@@ -5,26 +5,36 @@
   #:use-module (guix build-system trivial)
   #:use-module (guix gexp)
   #:use-module (guix packages)
-  #:use-module (ice-9 match)
   #:use-module (sagittarius packages guile-xyz)
-  #:export (locked-program
+  #:export (locked-command
             locked-package))
 
-(define (locked-program name exp)
-  "Return the program NAME running EXP with (sagittarius build locked)."
-  (program-file name
-                (with-extensions (list guile-landlock)
-                  (with-imported-modules '((sagittarius build locked))
-                    #~(begin
-                        (use-modules (sagittarius build locked))
-                        #$exp)))))
+(define* (locked-command command target rules
+                         #:key wayland? pipewire? runtime-directory?
+                         (environment '()))
+  "Return COMMAND and a program running TARGET with the rules returned by
+RULES, a gexp of a procedure taking the command-line arguments.  The other
+arguments are those of exec-locked."
+  (cons command
+        (program-file
+         command
+         (with-extensions (list guile-landlock)
+           (with-imported-modules '((sagittarius build locked))
+             #~(begin
+                 (use-modules (sagittarius build locked))
+                 (let ((arguments (cdr (command-line))))
+                   (exec-locked #$target arguments (#$rules arguments)
+                                #:wayland? #$wayland?
+                                #:pipewire? #$pipewire?
+                                #:runtime-directory? #$runtime-directory?
+                                #:environment '#$environment))))))))
 
-(define* (locked-package original programs
+(define* (locked-package original commands
                          #:key (name (string-append (package-name original)
                                                     "-locked")))
-  "Return a package whose commands are PROGRAMS, an alist of command names and
-programs from locked-program, wrapping those of ORIGINAL.  It keeps the data
-in share/ of ORIGINAL and the desktop entries that start one of PROGRAMS."
+  "Return a package providing COMMANDS, built with locked-command from those
+of ORIGINAL.  It keeps the data in share/ of ORIGINAL and the desktop entries
+that start one of COMMANDS."
   (package
     (name name)
     (version (package-version original))
@@ -37,55 +47,64 @@ in share/ of ORIGINAL and the desktop entries that start one of PROGRAMS."
       #~(begin
           (use-modules (guix build utils)
                        (ice-9 ftw)
-                       (ice-9 match)
                        (ice-9 regex)
                        (ice-9 textual-ports)
-                       (srfi srfi-1))
+                       (srfi srfi-1)
+                       (srfi srfi-26))
 
+          (define names '#$(map car commands))
+          (define programs (list #$@(map cdr commands)))
+          (define share (string-append #$original "/share"))
           (define original-bin (string-append #$original "/bin/"))
           (define bin (string-append #$output "/bin/"))
-          (define applications (string-append #$output "/share/applications"))
 
-          (define (starts-wrapped-command? entry)
+          (define (starts-command? entry)
             (let ((text (call-with-input-file entry get-string-all)))
-              (any (lambda (command)
+              (any (lambda (name)
                      (string-match (string-append (regexp-quote original-bin)
-                                                  (regexp-quote command)
+                                                  (regexp-quote name)
                                                   "( |$)")
                                    text))
-                   '#$(map car programs))))
+                   names)))
 
-          (mkdir-p bin)
-          (for-each (match-lambda
-                      ((command . program)
-                       (symlink program (string-append bin command))))
-                    (list #$@(map (match-lambda
-                                    ((command . program)
-                                     #~(cons #$command #$program)))
-                                  programs)))
+          (define (install-commands)
+            (mkdir-p bin)
+            (for-each (lambda (name program)
+                        (symlink program (string-append bin name)))
+                      names programs))
 
-          (let ((share (string-append #$original "/share")))
-            (when (file-exists? share)
-              (mkdir-p (string-append #$output "/share"))
-              (for-each (lambda (entry)
-                          (symlink (string-append share "/" entry)
-                                   (string-append #$output "/share/" entry)))
-                        (scandir share
-                                 (lambda (entry)
-                                   (not (member entry
-                                                '("." ".." "applications"))))))))
+          (define (link-data)
+            (mkdir-p (string-append #$output "/share"))
+            (for-each (lambda (entry)
+                        (symlink (string-append share "/" entry)
+                                 (string-append #$output "/share/" entry)))
+                      (scandir share
+                               (negate (cut member <>
+                                            '("." ".." "applications"))))))
 
-          (let ((entries (string-append #$original "/share/applications")))
-            (when (file-exists? entries)
-              (for-each (lambda (entry)
-                          (let ((target (string-append applications "/"
-                                                       (basename entry))))
-                            (mkdir-p applications)
-                            (copy-file entry target)
-                            (substitute* target
-                              (((regexp-quote original-bin)) bin))))
-                        (filter starts-wrapped-command?
-                                (find-files entries "\\.desktop$"))))))))
+          (define (desktop-entries)
+            (let ((directory (string-append share "/applications")))
+              (if (file-exists? directory)
+                  (filter starts-command? (find-files directory "\\.desktop$"))
+                  '())))
+
+          (define (install-desktop-entries)
+            (let ((applications (string-append #$output "/share/applications"))
+                  (entries (desktop-entries)))
+              (unless (null? entries)
+                (mkdir-p applications)
+                (for-each (lambda (entry)
+                            (let ((target (string-append applications "/"
+                                                         (basename entry))))
+                              (copy-file entry target)
+                              (substitute* target
+                                (((regexp-quote original-bin)) bin))))
+                          entries))))
+
+          (install-commands)
+          (when (file-exists? share)
+            (link-data)
+            (install-desktop-entries)))))
     (home-page (package-home-page original))
     (synopsis (package-synopsis original))
     (description

@@ -9,13 +9,11 @@
 (define-public qemu-locked
   (locked-package
    qemu
-   `(("qemu-system-x86_64"
-      . ,(locked-program
-          "qemu-system-x86_64"
-          #~(let ((arguments (cdr (command-line))))
-              (exec-locked #$(file-append qemu "/bin/qemu-system-x86_64")
-                           arguments
-                           (append (base-rules)
-                                   (device-rules "/dev/kvm" "/dev/vhost-vsock")
-                                   (list (read-only "/sys"))
-                                   (option-path-rules arguments)))))))))
+   (list (locked-command "qemu-system-x86_64"
+                         (file-append qemu "/bin/qemu-system-x86_64")
+                         #~(lambda (arguments)
+                             (append (base-rules)
+                                     (device-rules "/dev/kvm"
+                                                   "/dev/vhost-vsock")
+                                     (list (read-only "/sys"))
+                                     (option-path-rules arguments)))))))

@@ -9,15 +9,11 @@
 (define-public swaybg-locked
   (locked-package
    swaybg
-   `(("swaybg"
-      . ,(locked-program
-          "swaybg"
-          #~(let ((arguments (cdr (command-line))))
-              (exec-locked #$(file-append swaybg "/bin/swaybg")
-                           arguments
-                           (append (base-rules)
-                                   (font-rules)
-                                   ;; For its buffers, from shm_open
-                                   (list (read-write "/dev/shm"))
-                                   (argument-rules arguments))
-                           #:wayland? #t)))))))
+   (list (locked-command "swaybg" (file-append swaybg "/bin/swaybg")
+                         #~(lambda (arguments)
+                             (append (base-rules)
+                                     (font-rules)
+                                     ;; For its buffers, from shm_open
+                                     (list (read-write "/dev/shm"))
+                                     (argument-rules arguments)))
+                         #:wayland? #t))))

@@ -9,23 +9,19 @@
 (define-public mpv-locked
   (locked-package
    mpv
-   `(("mpv"
-      . ,(locked-program
-          "mpv"
-          #~(let ((arguments (cdr (command-line))))
-              (exec-locked #$(file-append mpv "/bin/mpv")
-                           arguments
-                           (append (base-rules)
-                                   (graphics-rules)
-                                   (font-rules)
-                                   (config-rules "mpv")
-                                   (state-rules "mpv")
-                                   (list (read-write (cache-path "mpv")
-                                                     #:create? #t))
-                                   (argument-rules arguments)
-                                   ;; Streams, through yt-dlp for most sites
-                                   (if (url-arguments? arguments)
-                                       (append (dns-rules) (tcp-rules 80 443))
-                                       '()))
-                           #:wayland? #t
-                           #:pipewire? #t)))))))
+   (list (locked-command "mpv" (file-append mpv "/bin/mpv")
+                         #~(lambda (arguments)
+                             (append (base-rules)
+                                     (graphics-rules)
+                                     (font-rules)
+                                     (config-rules "mpv")
+                                     (state-rules "mpv")
+                                     (list (read-write (cache-path "mpv")
+                                                       #:create? #t))
+                                     (argument-rules arguments)
+                                     (if (url-arguments? arguments)
+                                         (append (dns-rules)
+                                                 (tcp-rules 80 443))
+                                         '())))
+                         #:wayland? #t
+                         #:pipewire? #t))))

@@ -9,12 +9,10 @@
 (define-public pinentry-bemenu-locked
   (locked-package
    pinentry-bemenu
-   `(("pinentry-bemenu"
-      . ,(locked-program
-          "pinentry-bemenu"
-          #~(exec-locked #$(file-append pinentry-bemenu "/bin/pinentry-bemenu")
-                         (cdr (command-line))
-                         (append (base-rules) (font-rules))
+   (list (locked-command "pinentry-bemenu"
+                         (file-append pinentry-bemenu "/bin/pinentry-bemenu")
+                         #~(lambda _
+                             (append (base-rules) (font-rules)))
                          #:wayland? #t
                          ;; bemenu keeps its buffers in XDG_RUNTIME_DIR
-                         #:runtime-directory? #t))))))
+                         #:runtime-directory? #t))))
