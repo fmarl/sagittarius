@@ -1,0 +1,42 @@
+name: Update packages
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      # The latest binary tarball of Guix master, so no 'guix pull' is needed.
+      - name: Install Guix
+        run: |
+          wget -nv -O "$RUNNER_TEMP/guix.tar.xz" 'https://ci.guix.gnu.org/search/latest/archive?query=spec:tarball+status:success+system:x86_64-linux+guix-binary.tar.xz'
+          sudo tar --extract --file "$RUNNER_TEMP/guix.tar.xz" -C / --no-overwrite-dir
+
+          sudo groupadd --system guixbuild
+          for i in $(seq -w 1 10); do
+            sudo useradd --system -g guixbuild -d /var/empty -s /usr/sbin/nologin "guixbuilder$i"
+          done
+
+          guix=/var/guix/profiles/per-user/root/current-guix
+          sudo systemd-run --unit=guix-daemon "$guix/bin/guix-daemon" --build-users-group=guixbuild
+          for key in "$guix"/share/guix/*.pub; do
+            sudo "$guix/bin/guix" archive --authorize < "$key"
+          done
+          echo "$guix/bin" >> "$GITHUB_PATH"
+
+      - name: Open pull requests for updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          .github/scripts/update-packages.sh
