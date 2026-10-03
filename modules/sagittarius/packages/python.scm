@@ -1,3 +1,6 @@
+;;; SPDX-License-Identifier: GPL-3.0-or-later
+;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
+
 (define-module (sagittarius packages python)
   #:use-module ((guix licenses)
                 #:prefix license:)
@@ -36,5 +39,7 @@
     (synopsis
      "Build and run a kernel inside a virtualized snapshot of your live system")
     (description
-     "Build and run a kernel inside a virtualized snapshot of your live system.")
-    (license #f)))
+     "virtme-ng builds a Linux kernel from source with a minimal configuration
+and boots it in QEMU on a copy-on-write snapshot of the host file system.
+Changes made inside the virtual machine do not affect the host.")
+    (license license:gpl2)))
