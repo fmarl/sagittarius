@@ -3,6 +3,7 @@
 
 (define-module (sagittarius packages zig-xyz)
   #:use-module (gnu packages bash)
+  #:use-module (gnu packages commencement)
   #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages window-management)
@@ -150,13 +151,9 @@
       (license license:expat))))
 
 (define-public zig-arocc
-  ;; This is on a commit that is required by zig-translate-c.
-  ;; No releases as of yet.
+  ;; No releases yet; this is the commit required by zig-translate-c.
   (let ((commit "5f5a050569a95ecc40a426f0c3666ae7ef987ede")
-        (revision "0")
-        (gcc-toolchain* (delay (module-ref (resolve-interface '(gnu packages
-                                                                commencement))
-                                           'gcc-toolchain))))
+        (revision "0"))
     (package
       (name "zig-arocc")
       (version (git-version "0.0.1" revision commit))
@@ -175,23 +172,16 @@
         #:zig zig-0.16
         #:tests? #f ;XXX: Figure out what's wrong.
         #:zig-build-flags
-        #~(list (string-append "-Dgcc-install-prefix="
-                               #$(force gcc-toolchain*)))
+        #~(list (string-append "-Dgcc-install-prefix=" #$gcc-toolchain))
         #:phases
         #~(modify-phases %standard-phases
-            ;; (add-before 'check 'prepend-headers
-            ;; (lambda* _
-            ;; (setenv "C_INCLUDE_PATH"
-            ;; (string-append (getenv "TMPDIR")
-            ;; "/source/out/include:"
-            ;; (getenv "C_INCLUDE_PATH")))))
+            ;; Aro does not implement C_INCLUDE_PATH and LIBRARY_PATH yet,
+            ;; so pass their directories as -I and -L options.
             (add-after 'install 'wrap-program
-              (lambda* (#:key inputs outputs #:allow-other-keys)
-                (let* ((out (assoc-ref outputs "out"))
-                       (arocc (string-append out "/bin/arocc"))
-                       (wrapped-file (string-append (dirname arocc) "/."
-                                                    (basename arocc) "-real"))
-                       (sh (search-input-file inputs "/bin/sh")))
+              (lambda* (#:key inputs #:allow-other-keys)
+                (let ((arocc (string-append #$output "/bin/arocc"))
+                      (wrapped-file (string-append #$output "/bin/.arocc-real"))
+                      (sh (search-input-file inputs "/bin/sh")))
                   (rename-file arocc wrapped-file)
                   (call-with-output-file arocc
                     (lambda (port)
@@ -212,7 +202,7 @@ exec -a \"${0##*/}\" \"~a\" \"${args[@]}\" \"$@\"~%"
        (list $C_INCLUDE_PATH $LIBRARY_PATH))
       (native-search-paths
        search-paths)
-      (inputs (list (force gcc-toolchain*) bash-minimal))
+      (inputs (list gcc-toolchain bash-minimal))
       (home-page "https://github.com/Vexu/arocc")
       (synopsis "A C compiler written in Zig")
       (description
