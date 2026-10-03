@@ -15,7 +15,7 @@
 (define-public mullvad-vpn-desktop
   (package
     (name "mullvad-vpn-desktop")
-    (version "2026.3")
+    (version "2026.5")
     (source
      (origin
        (method url-fetch)
@@ -24,7 +24,7 @@
                            "_amd64.deb"))
        (file-name (string-append name "-" version "-x86_64-linux.deb"))
        (sha256
-        (base32 "1jhsjf707mv3i29i1r62cb6dml5n4n2s48h9as40d1w0mrryxiiq"))))
+        (base32 "1az751s2wmalff8axc019xf2k70yp4mz18lc1vsrg1aqa82d0sxa"))))
     (build-system chromium-binary-build-system)
     (arguments
      (list
