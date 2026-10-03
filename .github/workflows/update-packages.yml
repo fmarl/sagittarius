@@ -15,7 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The latest binary tarball of Guix master, so no 'guix pull' is needed.
       - name: Install Guix
         run: |
           wget -nv -O "$RUNNER_TEMP/guix.tar.xz" 'https://ci.guix.gnu.org/search/latest/archive?query=spec:tarball+status:success+system:x86_64-linux+guix-binary.tar.xz'

@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Open a pull request for each update of a package in etc/updates.scm that
-# builds, unless its branch exists.  Fail if an update does not build.
-
 set -euo pipefail
 
 refresh=$(guix refresh -L modules -m etc/updates.scm 2>&1 | tee /dev/stderr)
