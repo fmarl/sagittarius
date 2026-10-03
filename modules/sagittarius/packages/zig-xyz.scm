@@ -170,11 +170,17 @@
       (arguments
        (list
         #:zig zig-0.16
-        #:tests? #f ;XXX: Figure out what's wrong.
         #:zig-build-flags
         #~(list (string-append "-Dgcc-install-prefix=" #$gcc-toolchain))
         #:phases
         #~(modify-phases %standard-phases
+            (add-before 'check 'use-local-cache
+              (lambda _
+                ;; Aro looks for its builtin headers in an "include" directory
+                ;; above its executable, so the tests need the cache inside
+                ;; the source tree.
+                (setenv "ZIG_LOCAL_CACHE_DIR"
+                        (string-append (getcwd) "/.zig-cache"))))
             ;; Aro does not implement C_INCLUDE_PATH and LIBRARY_PATH yet,
             ;; so pass their directories as -I and -L options.
             (add-after 'install 'wrap-program
