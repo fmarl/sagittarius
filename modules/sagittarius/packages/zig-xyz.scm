@@ -123,8 +123,8 @@ building."
       (native-inputs (list pkg-config wayland))
       (synopsis "Zig Wayland bindings and protocol scanner")
       (description
-       "This package provides Zig bindings for @code{wayland} and a @code{Scanner}
-	interface.")
+       "This package provides Zig bindings for @code{wayland} and a
+@code{Scanner} interface.")
       (home-page "https://codeberg.org/ifreund/zig-wayland")
       (license license:expat))))
 
@@ -228,9 +228,10 @@ exec -a \"${0##*/}\" \"~a\" \"${args[@]}\" \"$@\"~%"
        search-paths)
       (inputs (list gcc-toolchain bash-minimal))
       (home-page "https://github.com/Vexu/arocc")
-      (synopsis "A C compiler written in Zig")
+      (synopsis "C compiler written in Zig")
       (description
-       "Aro is a C compiler written in Zig with a complete implementation of multiple C standards.")
+       "Aro is a C compiler written in Zig with a complete implementation of
+multiple C standards.")
       (license license:expat))))
 
 (define-public zig-translate-c
@@ -252,7 +253,9 @@ exec -a \"${0##*/}\" \"~a\" \"${args[@]}\" \"$@\"~%"
       #:zig zig-0.16))
     (propagated-inputs (list zig-arocc))
     (home-page "https://codeberg.org/ziglang/translate-c")
-    (synopsis "A Zig library for translating C code into Zig code")
+    (synopsis "Zig library for translating C code into Zig code")
     (description
-     "translate-c is a Zig library maintained by Zig Software Foundation that allows to translate C code into Zig. It is intended to replace built-in implementations of this functionality.")
+     "translate-c is a Zig library maintained by the Zig Software Foundation
+that translates C code into Zig.  It is meant to replace the C translation
+built into the Zig compiler.")
     (license license:expat)))
