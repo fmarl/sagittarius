@@ -196,7 +196,15 @@
                   (call-with-output-file arocc
                     (lambda (port)
                       (format port
-                       "#!~a~%exec -a \"${0##*/}\" \"~a\" -I\"${C_INCLUDE_PATH/:/ -I}\" -L\"${LIBRARY_PATH/:/ -L}\" \"$@\"~%"
+                       "#!~a
+set -f
+args=()
+IFS=:
+for d in $C_INCLUDE_PATH; do [ -n \"$d\" ] && args+=(\"-I$d\"); done
+for d in $LIBRARY_PATH; do [ -n \"$d\" ] && args+=(\"-L$d\"); done
+unset IFS
+set +f
+exec -a \"${0##*/}\" \"~a\" \"${args[@]}\" \"$@\"~%"
                        sh
                        (canonicalize-path wrapped-file))))
                   (chmod arocc #o755)))))))
