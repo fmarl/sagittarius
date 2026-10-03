@@ -23,8 +23,8 @@
                          #:key (name (string-append (package-name original)
                                                     "-locked")))
   "Return a package whose commands are PROGRAMS, an alist of command names and
-programs from locked-program, wrapping those of ORIGINAL.  It keeps the manual
-pages of ORIGINAL and the desktop entries that start one of PROGRAMS."
+programs from locked-program, wrapping those of ORIGINAL.  It keeps the data
+in share/ of ORIGINAL and the desktop entries that start one of PROGRAMS."
   (package
     (name name)
     (version (package-version original))
@@ -36,6 +36,7 @@ pages of ORIGINAL and the desktop entries that start one of PROGRAMS."
       #:builder
       #~(begin
           (use-modules (guix build utils)
+                       (ice-9 ftw)
                        (ice-9 match)
                        (ice-9 regex)
                        (ice-9 textual-ports)
@@ -63,10 +64,16 @@ pages of ORIGINAL and the desktop entries that start one of PROGRAMS."
                                      #~(cons #$command #$program)))
                                   programs)))
 
-          (let ((man (string-append #$original "/share/man")))
-            (when (file-exists? man)
+          (let ((share (string-append #$original "/share")))
+            (when (file-exists? share)
               (mkdir-p (string-append #$output "/share"))
-              (symlink man (string-append #$output "/share/man"))))
+              (for-each (lambda (entry)
+                          (symlink (string-append share "/" entry)
+                                   (string-append #$output "/share/" entry)))
+                        (scandir share
+                                 (lambda (entry)
+                                   (not (member entry
+                                                '("." ".." "applications"))))))))
 
           (let ((entries (string-append #$original "/share/applications")))
             (when (file-exists? entries)
