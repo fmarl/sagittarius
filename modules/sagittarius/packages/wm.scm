@@ -95,31 +95,31 @@ from a tty using KMS/DRM.")
         (base32 "0nswx8arks72yfps5cbnpr3665l7p2z61hxh8qmlsk80dbi3fbp3"))))
     (build-system asdf-build-system/sbcl)
     (arguments
-     '(#:phases (modify-phases %standard-phases
-                  (add-after 'create-asdf-configuration 'build-program
-                    (lambda* (#:key inputs outputs #:allow-other-keys)
-                      (build-program (string-append (assoc-ref outputs "out")
-                                                    "/bin/nucleotide")
-                                     outputs
-                                     #:dependencies '("nucleotide" "slynk"
-                                                      "slynk/mrepl")
-                                     #:dependency-prefixes (list (assoc-ref
-                                                                  outputs
-                                                                  "out")
-                                                                 (assoc-ref
-                                                                  inputs
-                                                                  "sbcl-slynk"))
-                                     #:compress? #t
-                                     #:entry-program '((sb-ext:disable-debugger)
-                                                       (nucleotide:start-repl-server
-                                                        :port 4005)
-                                                       (nucleotide:start-wm)
-                                                       (sb-thread:join-thread (nucleotide::wm-thread
-                                                                               nucleotide:*wm*))
-                                                       0)))))))
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'create-asdf-configuration 'build-program
+            (lambda* (#:key outputs #:allow-other-keys)
+              (build-program
+               (string-append #$output "/bin/nucleotide")
+               outputs
+               #:dependencies '("nucleotide" "slynk" "slynk/mrepl")
+               #:dependency-prefixes
+               (list #$output #$(this-package-input "sbcl-slynk"))
+               #:compress? #t
+               #:entry-program
+               '((sb-ext:disable-debugger)
+                 (nucleotide:start-repl-server :port 4005)
+                 (nucleotide:start-wm)
+                 (sb-thread:join-thread
+                  (nucleotide::wm-thread nucleotide:*wm*))
+                 0)))))))
     (inputs (list sbcl-slynk))
     (native-inputs (list sbcl))
-    (synopsis "A hackable Wayland window manager")
-    (description "A hackable Wayland window manager")
+    (synopsis "Hackable Wayland window manager")
+    (description
+     "Nucleotide is a hackable Wayland window manager written in Common Lisp.
+It starts a Slynk REPL server on port 4005 through which it can be inspected
+and modified while running.")
     (home-page "https://codeberg.org/fmarl/nucleotide")
     (license license:gpl3)))
