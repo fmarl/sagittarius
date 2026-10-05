@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$(realpath "$0")")/.."
+
+if (($# == 0)); then
+    exec guix refresh -L modules -m etc/updates.scm
+fi
+
+if ! git diff --quiet; then
+    echo 'The working tree has uncommitted changes.' >&2
+    exit 1
+fi
+
+for spec in "$@"; do
+    guix refresh -L modules -u "$spec"
+
+    if git diff --quiet; then
+        echo "$spec is up to date." >&2
+        continue
+    fi
+
+    version=$(guix show -L modules "$spec" | sed -n 's/^version: //p' | head -n 1)
+    guix build -L modules "${spec%@*}@$version"
+    git commit --quiet --all -S --message "${spec%@*}: Update to $version"
+done
