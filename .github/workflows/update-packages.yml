@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  issues: write
 
 jobs:
   update:
@@ -32,10 +32,7 @@ jobs:
           done
           echo "$guix/bin" >> "$GITHUB_PATH"
 
-      - name: Open pull requests for updates
+      - name: Report available updates
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          .github/scripts/update-packages.sh
+        run: .github/scripts/report-updates.sh
