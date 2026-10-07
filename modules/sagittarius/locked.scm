@@ -31,10 +31,11 @@ arguments are those of exec-locked."
 
 (define* (locked-package original commands
                          #:key (name (string-append (package-name original)
-                                                    "-locked")))
+                                                    "-locked"))
+                         (description (package-description original)))
   "Return a package providing COMMANDS, built with locked-command from those
 of ORIGINAL.  It keeps the data in share/ of ORIGINAL and the desktop entries
-that start one of COMMANDS."
+that start one of COMMANDS.  DESCRIPTION replaces that of ORIGINAL."
   (package
     (name name)
     (version (package-version original))
@@ -108,6 +109,6 @@ that start one of COMMANDS."
     (home-page (package-home-page original))
     (synopsis (package-synopsis original))
     (description
-     (string-append (package-description original)
+     (string-append description
                     "\n\nThis variant runs the program confined by Landlock."))
     (license (package-license original))))

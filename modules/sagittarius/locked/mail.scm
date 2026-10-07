@@ -37,7 +37,10 @@
                                            (read-only (config-path "isyncrc"))
                                            (read-write (mail-directory)
                                                        #:create? #t))))))
-   #:name "mbsync-locked"))
+   #:name "mbsync-locked"
+   ;; That of isync starts with a lower-case letter.
+   #:description "Mbsync synchronizes mailboxes in both directions.  It
+supports Maildir and IMAP."))
 
 (define-public msmtp-locked
   (locked-package
