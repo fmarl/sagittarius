@@ -27,7 +27,7 @@
     (build-system pyproject-build-system)
     (arguments
      (list
-      #:tests? #f                       ;no test suite
+      #:tests? #f ;no test suite
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'remove-mcp-entry-point
@@ -35,7 +35,8 @@
               ;; Needs the optional "mcp" extra, but python-mcp in Guix lacks
               ;; some of its dependencies.
               (substitute* "setup.py"
-                ((".*\"vng-mcp = .*") "")))))))
+                ((".*\"vng-mcp = .*")
+                 "")))))))
     (propagated-inputs (list python-argcomplete python-requests))
     (native-inputs (list python-argparse-manpage python-setuptools))
     (home-page "https://github.com/arighi/virtme-ng")

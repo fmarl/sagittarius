@@ -20,9 +20,13 @@
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "https://github.com/mullvad/mullvadvpn-app/releases/"
-                           "download/" version "/MullvadVPN-" version
-                           "_amd64.deb"))
+       (uri (string-append
+             "https://github.com/mullvad/mullvadvpn-app/releases/"
+             "download/"
+             version
+             "/MullvadVPN-"
+             version
+             "_amd64.deb"))
        (file-name (string-append name "-" version "-x86_64-linux.deb"))
        (sha256
         (base32 "1az751s2wmalff8axc019xf2k70yp4mz18lc1vsrg1aqa82d0sxa"))))
@@ -30,22 +34,19 @@
     (arguments
      (list
       #:wrapper-plan
-      #~(append
-         (list "usr/bin/mullvad"
-               "usr/bin/mullvad-daemon"
-               "usr/bin/mullvad-exclude")
-         (map (lambda (file)
-                (string-append "opt/Mullvad VPN/" file))
-              '("chrome-sandbox"
-                "chrome_crashpad_handler"
-                "libEGL.so"
-                "libffmpeg.so"
-                "libGLESv2.so"
-                "libvk_swiftshader.so"
-                "libvulkan.so.1"
-                "mullvad-gui"
-                "resources/mullvad-problem-report"
-                "resources/mullvad-setup")))
+      #~(append (list "usr/bin/mullvad" "usr/bin/mullvad-daemon"
+                      "usr/bin/mullvad-exclude")
+                (map (lambda (file)
+                       (string-append "opt/Mullvad VPN/" file))
+                     '("chrome-sandbox" "chrome_crashpad_handler"
+                       "libEGL.so"
+                       "libffmpeg.so"
+                       "libGLESv2.so"
+                       "libvk_swiftshader.so"
+                       "libvulkan.so.1"
+                       "mullvad-gui"
+                       "resources/mullvad-problem-report"
+                       "resources/mullvad-setup")))
       #:install-plan
       #~'(("opt/" "/share")
           ("usr/bin/" "/bin")
@@ -64,7 +65,8 @@
                 (patch-shebang (string-append "." old-exe))
                 (substitute* "usr/share/applications/mullvad-vpn.desktop"
                   (((string-append "^Exec=\"?" old-exe "\"?"))
-                   (string-append "Exec=" #$output "/bin/mullvad-vpn"))))))
+                   (string-append "Exec="
+                                  #$output "/bin/mullvad-vpn"))))))
           (add-before 'install-wrapper 'symlink-entrypoint
             (lambda _
               (let* ((bin (string-append #$output "/bin"))
@@ -75,10 +77,13 @@
                          (string-append bin "/mullvad-problem-report"))
                 (symlink (string-append share "/mullvad-vpn") exe)
                 (wrap-program exe
-                  `("MULLVAD_DISABLE_UPDATE_NOTIFICATION" = ("1"))
-                  `("LD_LIBRARY_PATH" = (,share)))
+                  `("MULLVAD_DISABLE_UPDATE_NOTIFICATION" =
+                    ("1"))
+                  `("LD_LIBRARY_PATH" =
+                    (,share)))
                 (wrap-program (string-append bin "/mullvad-daemon")
-                  `("MULLVAD_RESOURCE_DIR" = (,resources)))))))))
+                  `("MULLVAD_RESOURCE_DIR" =
+                    (,resources)))))))))
     (inputs (list bash-minimal iputils libnotify))
     (supported-systems '("x86_64-linux"))
     (properties '((upstream-name . "MullvadVPN")))

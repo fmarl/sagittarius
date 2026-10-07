@@ -26,7 +26,8 @@
           (base32 "0fwb16az5934rbm3j60v3fhrnam7bwwazjgpxv4n53gavcxfiij2"))))
       (build-system guile-build-system)
       (arguments
-       (list #:source-directory "src"))
+       (list
+        #:source-directory "src"))
       (native-inputs (list guile-3.0))
       (home-page "https://github.com/fmarl/guile-landlock")
       (synopsis "Guile bindings for the Landlock sandboxing API")

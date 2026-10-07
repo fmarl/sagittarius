@@ -58,12 +58,12 @@
           (add-after 'unpack 'prepare-build.zig.zon
             #$(rename-zon-dependencies %river-zig-dependencies))
           (add-before 'build 'revert-build.zig.zon
-            #$(rename-zon-dependencies %river-zig-dependencies #:revert? #t))
+            #$(rename-zon-dependencies %river-zig-dependencies
+                                       #:revert? #t))
           (add-after 'install 'install-wayland-session
             (lambda _
               (install-file "contrib/river.desktop"
-                            (string-append #$output
-                                           "/share/wayland-sessions")))))))
+                            (string-append #$output "/share/wayland-sessions")))))))
     (inputs (list libevdev
                   eudev
                   zig-translate-c
@@ -109,14 +109,15 @@ from a tty using KMS/DRM.")
         #~(modify-phases %standard-phases
             (add-after 'create-asdf-configuration 'build-program
               (lambda* (#:key outputs #:allow-other-keys)
-                (build-program
-                 (string-append #$output "/bin/nucleotide")
-                 outputs
-                 #:dependencies '("nucleotide" "slynk" "slynk/mrepl")
-                 #:dependency-prefixes
-                 (list #$output #$(this-package-input "sbcl-slynk"))
-                 #:compress? #t
-                 #:entry-program '#$%nucleotide-entry-program))))))
+                (build-program (string-append #$output "/bin/nucleotide")
+                               outputs
+                               #:dependencies '("nucleotide" "slynk"
+                                                "slynk/mrepl")
+                               #:dependency-prefixes (list #$output
+                                                           #$(this-package-input
+                                                              "sbcl-slynk"))
+                               #:compress? #t
+                               #:entry-program '#$%nucleotide-entry-program))))))
       (inputs (list sbcl-slynk))
       (native-inputs (list sbcl))
       (synopsis "Hackable Wayland window manager")

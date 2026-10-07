@@ -158,7 +158,8 @@ building."
             (add-after 'unpack 'prepare-build.zig.zon
               #$(rename-zon-dependencies dependencies))
             (add-before 'build 'revert-build.zig.zon
-              #$(rename-zon-dependencies dependencies #:revert? #t)))))
+              #$(rename-zon-dependencies dependencies
+                                         #:revert? #t)))))
       (propagated-inputs (list wlroots-X11 zig-pixman
                                zig-wayland-for-river-0.4
                                zig-xkbcommon-for-river-0.4))
@@ -189,7 +190,8 @@ building."
        (list
         #:zig zig-0.16
         #:zig-build-flags
-        #~(list (string-append "-Dgcc-install-prefix=" #$gcc-toolchain))
+        #~(list (string-append "-Dgcc-install-prefix="
+                               #$gcc-toolchain))
         #:phases
         #~(modify-phases %standard-phases
             (add-before 'check 'use-local-cache
