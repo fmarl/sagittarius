@@ -80,6 +80,13 @@ configuration.  It can run nested in an X11/Wayland session or also directly
 from a tty using KMS/DRM.")
     (license license:gpl3)))
 
+(define %nucleotide-entry-program
+  '((sb-ext:disable-debugger)
+    (nucleotide:start-repl-server :port 4005)
+    (nucleotide:start-wm)
+    (sb-thread:join-thread (nucleotide::wm-thread nucleotide:*wm*))
+    0))
+
 (define-public nucleotide
   (let ((commit "cb7f9c52e8cd5bbe8fbc5797595f310867dca058")
         (revision "0"))
@@ -109,13 +116,7 @@ from a tty using KMS/DRM.")
                  #:dependency-prefixes
                  (list #$output #$(this-package-input "sbcl-slynk"))
                  #:compress? #t
-                 #:entry-program
-                 '((sb-ext:disable-debugger)
-                   (nucleotide:start-repl-server :port 4005)
-                   (nucleotide:start-wm)
-                   (sb-thread:join-thread
-                    (nucleotide::wm-thread nucleotide:*wm*))
-                   0)))))))
+                 #:entry-program '#$%nucleotide-entry-program))))))
       (inputs (list sbcl-slynk))
       (native-inputs (list sbcl))
       (synopsis "Hackable Wayland window manager")
