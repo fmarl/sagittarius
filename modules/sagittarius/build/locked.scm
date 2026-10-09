@@ -8,6 +8,7 @@
                          landlock-port
                          landlock-exec)
   #:use-module (ice-9 match)
+  #:use-module (ice-9 regex)
   #:use-module (ice-9 textual-ports)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
@@ -32,6 +33,7 @@
             dns-rules
             tcp-rules
             gnupg-rules
+            dbus-rules
             exec-locked))
 
 (define %read '(read-file read-dir))
@@ -205,6 +207,17 @@ device or a socket, or creating a socket."
   "Rules for running gpg, which talks to gpg-agent."
   (list (read-write (or (getenv "GNUPGHOME") (home-path ".gnupg")))
         (landlock-path (runtime-path "gnupg") '(resolve-unix) #:optional? #t)))
+
+(define (dbus-rules)
+  "Rules for connecting to the session bus, but none of the other sockets
+beside it, if it listens on a path."
+  (let* ((address (or (getenv "DBUS_SESSION_BUS_ADDRESS")
+                      (string-append "unix:path=" (runtime-path "bus"))))
+         (path (string-match "unix:path=([^,;]+)" address)))
+    (if path
+        (list (landlock-path (match:substring path 1) '(resolve-unix)
+                             #:optional? #t))
+        '())))
 
 (define (share-socket! socket name announce!)
   "Hard-link SOCKET into the directory NAME of its own, so that the program

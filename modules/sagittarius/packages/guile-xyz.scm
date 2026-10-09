@@ -10,8 +10,8 @@
   #:use-module ((guix licenses) #:prefix license:))
 
 (define-public guile-landlock
-  (let ((commit "dce8cdeef8b0246659dee10291acd93d6573c199")
-        (revision "0"))
+  (let ((commit "9c11f1be2ab61df95f3ab932c66039067fa5e5d1")
+        (revision "1"))
     (package
       (name "guile-landlock")
       (version (git-version "0.1.0" revision commit))
@@ -23,7 +23,7 @@
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "0fwb16az5934rbm3j60v3fhrnam7bwwazjgpxv4n53gavcxfiij2"))))
+          (base32 "1w9fjv6xbgq4jxx8zwav737w8lmfli70vy6l5afvyc9pf7rsppds"))))
       (build-system guile-build-system)
       (arguments
        (list
