@@ -6,15 +6,17 @@
   #:use-module (guix gexp)
   #:use-module (sagittarius locked))
 
+(define-locked-rules (sagittarius build locked virtualization)
+  %qemu)
+
 (define-public qemu-locked
-  (locked-package
+  (make-locked-package
    qemu
-   (list (locked-command "qemu-system-x86_64"
-                         (file-append qemu "/bin/qemu-system-x86_64")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (device-rules "/dev/kvm"
-                                                   "/dev/vhost-vsock")
-                                     (list (read-only "/sys"))
-                                     (option-path-rules arguments)
-                                     (usb-rules arguments)))))))
+   (list (locked-command
+           (name "qemu-system-x86_64")
+           (program (file-append qemu "/bin/qemu-system-x86_64"))
+           (rules (list (devices "/dev/kvm" "/dev/vhost-vsock")
+                        (read-only "/sys")
+                        %qemu))
+           (preserved-environment-variables
+            (cons "QEMU_*" %default-preserved-environment-variables))))))

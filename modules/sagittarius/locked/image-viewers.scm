@@ -7,13 +7,13 @@
   #:use-module (sagittarius locked))
 
 (define-public imv-locked
-  (locked-package
+  (make-locked-package
    imv
-   (list (locked-command "imv" (file-append imv "/bin/imv-wayland")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (graphics-rules)
-                                     (font-rules)
-                                     (config-rules "imv")
-                                     (argument-rules arguments)))
-                         #:wayland? #t))))
+   (list (locked-command
+           (name "imv")
+           (program (file-append imv "/bin/imv-wayland"))
+           (rules (list %graphics
+                        %fonts
+                        (xdg-config "imv")
+                        %argument-files))
+           (wayland 'restricted)))))

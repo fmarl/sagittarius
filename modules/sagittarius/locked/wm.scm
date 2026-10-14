@@ -7,26 +7,24 @@
   #:use-module (sagittarius locked))
 
 (define-public swaybg-locked
-  (locked-package
+  (make-locked-package
    swaybg
-   (list (locked-command "swaybg" (file-append swaybg "/bin/swaybg")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (font-rules)
-                                     ;; For its buffers, from shm_open
-                                     (list (read-write "/dev/shm"))
-                                     (argument-rules arguments)))
-                         #:wayland? #t))))
+   (list (locked-command
+           (name "swaybg")
+           (program (file-append swaybg "/bin/swaybg"))
+           (rules (list %fonts
+                        %shm
+                        %argument-files))
+           (wayland 'full)))))
 
 (define-public mako-locked
-  (locked-package
+  (make-locked-package
    mako
-   (list (locked-command "mako" (file-append mako "/bin/mako")
-                         #~(lambda _
-                             (append (base-rules)
-                                     (font-rules)
-                                     (config-rules "mako")
-                                     (dbus-rules)
-                                     ;; For its buffers, from shm_open
-                                     (list (read-write "/dev/shm"))))
-                         #:wayland? #t))))
+   (list (locked-command
+           (name "mako")
+           (program (file-append mako "/bin/mako"))
+           (rules (list %fonts
+                        (xdg-config "mako")
+                        %shm))
+           (wayland 'full)
+           (dbus '("--own=org.freedesktop.Notifications"))))))

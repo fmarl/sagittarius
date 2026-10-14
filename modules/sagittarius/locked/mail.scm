@@ -7,53 +7,49 @@
   #:use-module (sagittarius locked))
 
 (define-public mu-locked
-  (locked-package
+  (make-locked-package
    mu
-   (list (locked-command "mu" (file-append mu "/bin/mu")
-                         #~(lambda _
-                             (append (base-rules)
-                                     (list (read-write (mail-directory))
-                                           (read-write (cache-path "mu")
-                                                       #:create? #t)
-                                           ;; mu4e saves attachments there
-                                           ;; and opens them from /tmp
-                                           (read-write (user-directory
-                                                        "DOWNLOAD" "Downloads"))
-                                           (read-write (or (getenv "TMPDIR")
-                                                           "/tmp")))))))))
+   (list (locked-command
+           (name "mu")
+           (program (file-append mu "/bin/mu"))
+           (rules (list %mail-directory
+                        (xdg-cache "mu")
+                        ;; mu4e saves attachments there
+                        (xdg-user-directory "DOWNLOAD" "Downloads")))
+           ;; For the files it passes to mu4e
+           (temporary-directory? #t)))))
 
 (define-public mbsync-locked
-  (locked-package
+  (make-locked-package
    isync
-   (list (locked-command "mbsync" (file-append isync "/bin/mbsync")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (dns-rules)
-                                     (tcp-rules 143 993)
-                                     (argument-rules arguments)
-                                     ;; For PassCmd decrypting with gpg
-                                     (gnupg-rules)
-                                     (list (read-only (home-path ".mbsyncrc"))
-                                           (read-only (config-path "isyncrc"))
-                                           (read-write (mail-directory)
-                                                       #:create? #t))))))
+   (list (locked-command
+           (name "mbsync")
+           (program (file-append isync "/bin/mbsync"))
+           (rules (list %dns
+                        (tcp-ports 143 993)
+                        %argument-files
+                        ;; For PassCmd decrypting with gpg
+                        %gnupg
+                        (home-file ".mbsyncrc")
+                        (xdg-config "isyncrc")
+                        %mail-directory))))
    #:name "mbsync-locked"
-   ;; That of isync starts with a lower-case letter.
+   ;; isync's own starts with a lower-case letter
    #:description "Mbsync synchronizes mailboxes in both directions.  It
 supports Maildir and IMAP."))
 
 (define-public msmtp-locked
-  (locked-package
+  (make-locked-package
    msmtp
-   (list (locked-command "msmtp" (file-append msmtp "/bin/msmtp")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (dns-rules)
-                                     (tcp-rules 25 465 587)
-                                     (argument-rules arguments)
-                                     ;; For passwordeval decrypting with gpg
-                                     (gnupg-rules)
-                                     (config-rules "msmtp")
-                                     (state-rules "msmtp")
-                                     (list (read-only
-                                            (home-path ".msmtprc")))))))))
+   (list (locked-command
+           (name "msmtp")
+           (program (file-append msmtp "/bin/msmtp"))
+           (rules (list %dns
+                        (tcp-ports 25 465 587)
+                        %argument-files
+                        ;; For passwordeval decrypting with gpg
+                        %gnupg
+                        (xdg-config "msmtp")
+                        (xdg-state "msmtp")
+                        (home-file ".msmtprc")))
+           (temporary-directory? #t)))))

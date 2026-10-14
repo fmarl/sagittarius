@@ -7,15 +7,15 @@
   #:use-module (sagittarius locked))
 
 (define-public zathura-locked
-  (locked-package
+  (make-locked-package
    zathura
    ;; zathura-sandbox adds its own seccomp filter
-   (list (locked-command "zathura" (file-append zathura "/bin/zathura-sandbox")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (font-rules)
-                                     (config-rules "zathura")
-                                     (config-rules "gtk-3.0")
-                                     (argument-rules arguments)))
-                         #:wayland? #t
-                         #:environment '(("NO_AT_BRIDGE" . "1"))))))
+   (list (locked-command
+           (name "zathura")
+           (program (file-append zathura "/bin/zathura-sandbox"))
+           (rules (list %fonts
+                        (xdg-config "zathura")
+                        (xdg-config "gtk-3.0")
+                        %argument-files))
+           (wayland 'restricted)
+           (environment '(("NO_AT_BRIDGE" . "1")))))))

@@ -36,6 +36,7 @@
    (eval . (put 'bootloader-configuration 'scheme-indent-function 0))
    (eval . (put 'channel 'scheme-indent-function 0))
    (eval . (put 'file-system 'scheme-indent-function 0))
+   (eval . (put 'locked-command 'scheme-indent-function 0))
    (eval . (put 'network-address 'scheme-indent-function 0))
    (eval . (put 'network-route 'scheme-indent-function 0))
    (eval . (put 'openssh-configuration 'scheme-indent-function 0))

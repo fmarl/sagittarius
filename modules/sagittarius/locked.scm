@@ -2,40 +2,247 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius locked)
+  #:use-module (gnu packages glib)
   #:use-module (guix build-system trivial)
+  #:use-module (guix diagnostics)
   #:use-module (guix gexp)
+  #:use-module (guix i18n)
+  #:use-module (guix modules)
   #:use-module (guix packages)
+  #:use-module (guix records)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 receive)
+  #:use-module (sagittarius build locked environment)
+  #:use-module ((sagittarius build locked kinds)
+                #:select (module-rule-kind-names))
+  #:use-module ((sagittarius build locked syscalls)
+                #:select (%syscall-groups))
   #:use-module (sagittarius packages guile-xyz)
-  #:export (locked-command
-            locked-package))
+  #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-9)
+  #:use-module (srfi srfi-26)
+  #:re-export (%default-preserved-environment-variables)
+  #:export (locked-rule?
+            locked-rule-module
+            locked-rule-kind
+            locked-rule-parameters
+            locked-rule->spec
+            define-locked-rules
+            when-network-arguments
 
-(define* (locked-command command target rules
-                         #:key wayland? pipewire? runtime-directory?
-                         (environment '()))
-  "Return COMMAND and a program running TARGET with the rules returned by
-RULES, a gexp of a procedure taking the command-line arguments.  The other
-arguments are those of exec-locked."
-  (cons command
-        (program-file
-         command
-         (with-extensions (list guile-landlock)
-           (with-imported-modules '((sagittarius build locked))
-             #~(begin
-                 (use-modules (sagittarius build locked))
-                 (let ((arguments (cdr (command-line))))
-                   (exec-locked #$target arguments (#$rules arguments)
-                                #:wayland? #$wayland?
-                                #:pipewire? #$pipewire?
-                                #:runtime-directory? #$runtime-directory?
-                                #:environment '#$environment))))))))
+            locked-command
+            locked-command?
+            locked-command-name
+            locked-command-program
+            locked-command-rules
+            locked-command-wayland
+            locked-command-pipewire?
+            locked-command-dbus
+            locked-command-runtime-directory?
+            locked-command-temporary-directory?
+            locked-command-environment
+            locked-command-preserved-environment-variables
+            locked-command-syscall-allowances
+            locked-command-program-file
 
-(define* (locked-package original commands
-                         #:key (name (string-append (package-name original)
-                                                    "-locked"))
-                         (description (package-description original)))
-  "Return a package providing COMMANDS, built with locked-command from those
-of ORIGINAL.  It keeps the data in share/ of ORIGINAL and the desktop entries
-that start one of COMMANDS.  DESCRIPTION replaces that of ORIGINAL."
+            make-locked-package))
+
+(define-record-type <locked-rule>
+  (make-locked-rule module kind parameters)
+  locked-rule?
+  (module     locked-rule-module)
+  (kind       locked-rule-kind)
+  (parameters locked-rule-parameters))
+
+(define (locked-rule->spec rule)
+  (cons* (locked-rule-module rule)
+         (locked-rule-kind rule)
+         (map (lambda (parameter)
+                (if (locked-rule? parameter)
+                    (locked-rule->spec parameter)
+                    parameter))
+              (locked-rule-parameters rule))))
+
+(define (locked-rule-modules rule)
+  (cons (locked-rule-module rule)
+        (append-map locked-rule-modules
+                    (filter locked-rule? (locked-rule-parameters rule)))))
+
+(define (validate-kinds module kinds)
+  (let ((known (module-rule-kind-names module)))
+    (for-each (lambda (kind)
+                (unless (memq kind known)
+                  (raise-exception
+                   (formatted-message (G_ "~a defines no kind of rules ~a")
+                                      module kind))))
+              kinds)))
+
+(define-syntax define-locked-rules
+  (lambda (s)
+    "Define and export a constructor of <locked-rule> for each form, such as
+%dns or (xdg-config name)."
+    (define (kind name)
+      (datum->syntax name
+                     (string->symbol
+                      (string-trim (symbol->string (syntax->datum name))
+                                   #\%))))
+
+    (define (form-name form)
+      (syntax-case form ()
+        ((name . _) #'name)
+        (name #'name)))
+
+    ;; (guix packages) replaces define-public with one without rest arguments
+    (define (definition module form)
+      (syntax-case form ()
+        ((name parameter ...)
+         #`(define (name parameter ...)
+             (make-locked-rule '#,module '#,(kind #'name)
+                               (list parameter ...))))
+        ((name parameter ... . rest)
+         #`(define (name parameter ... . rest)
+             (make-locked-rule '#,module '#,(kind #'name)
+                               (cons* parameter ... rest))))
+        (name
+         #`(define name
+             (make-locked-rule '#,module '#,(kind #'name) '())))))
+
+    (syntax-case s ()
+      ((_ module form ...)
+       #`(begin
+           (validate-kinds 'module
+                           '#,(map kind (map form-name #'(form ...))))
+           #,@(map (cut definition #'module <>) #'(form ...))
+           (export #,@(map form-name #'(form ...))))))))
+
+(define-locked-rules (sagittarius build locked rules)
+  %graphics
+  %fonts
+  %shm
+  %dns
+  %gnupg
+  %argument-files
+  %mail-directory
+  (xdg-config name)
+  (xdg-state name)
+  (xdg-cache name)
+  (xdg-user-directory name default)
+  (home-file name)
+  (read-only file)
+  (read-write file)
+  (devices . files)
+  (tcp-ports . ports))
+
+(define (validate-rules rules)
+  (for-each (lambda (rule)
+              (unless (locked-rule? rule)
+                (raise-exception
+                 (formatted-message (G_ "not a <locked-rule>: ~s") rule)))
+              (validate-kinds (locked-rule-module rule)
+                              (list (locked-rule-kind rule))))
+            rules)
+  rules)
+
+(define (when-network-arguments . arguments)
+  "Return a rule applying the rules among ARGUMENTS if the command line names
+URLs or playlists with the #:playlists extensions."
+  (receive (extensions rules)
+      (match arguments
+        ((#:playlists extensions . rules) (values extensions rules))
+        (rules (values '() rules)))
+    (make-locked-rule '(sagittarius build locked rules)
+                      'when-network-arguments
+                      (cons extensions (validate-rules rules)))))
+
+(define (validate-wayland value)
+  (match value
+    ((or #f 'restricted 'full) value)
+    (_ (raise-exception
+        (formatted-message
+         (G_ "Wayland access is not #f, 'restricted or 'full: ~s")
+         value)))))
+
+(define (validate-syscall-allowances allowances)
+  (let ((unknown (remove (cut assq <> %syscall-groups) allowances)))
+    (unless (null? unknown)
+      (raise-exception
+       (formatted-message (G_ "unknown system call groups: ~s") unknown)))
+    allowances))
+
+(define-record-type* <locked-command>
+  locked-command make-locked-command
+  locked-command?
+  (name                 locked-command-name)    ;string
+  (program              locked-command-program) ;file-like
+  (rules                locked-command-rules    ;list of <locked-rule>
+                        (default '())
+                        (sanitize validate-rules))
+  (wayland              locked-command-wayland  ;#f | 'restricted | 'full
+                        (default #f)
+                        (sanitize validate-wayland))
+  (pipewire?            locked-command-pipewire?
+                        (default #f))
+  (dbus                 locked-command-dbus     ;#f or xdg-dbus-proxy options
+                        (default #f))
+  (runtime-directory?   locked-command-runtime-directory?
+                        (default #f))
+  (temporary-directory? locked-command-temporary-directory?
+                        (default #f))
+  (environment          locked-command-environment ;alist
+                        (default '()))
+  (preserved-environment-variables
+   locked-command-preserved-environment-variables
+   (default %default-preserved-environment-variables))
+  (syscall-allowances   locked-command-syscall-allowances ;list of groups
+                        (default '())
+                        (sanitize validate-syscall-allowances)))
+
+(define (locked-command-options command)
+  (match-record command <locked-command>
+    (name wayland pipewire? dbus runtime-directory? temporary-directory?
+          environment preserved-environment-variables syscall-allowances)
+    (list #:name name
+          #:wayland wayland
+          #:pipewire? pipewire?
+          #:dbus dbus
+          #:runtime-directory? runtime-directory?
+          #:temporary-directory? temporary-directory?
+          #:environment environment
+          #:preserved-environment-variables preserved-environment-variables
+          #:syscall-allowances syscall-allowances)))
+
+(define (build-module? name)
+  (match name
+    (('sagittarius 'build _ ...) #t)
+    (('guix 'build 'utils) #t)
+    (_ #f)))
+
+(define (locked-command-program-file command)
+  (program-file
+   (locked-command-name command)
+   (with-extensions (list guile-landlock guile-seccomp)
+     (with-imported-modules (source-module-closure
+                             (delete-duplicates
+                              (cons '(sagittarius build locked)
+                                    (append-map locked-rule-modules
+                                                (locked-command-rules
+                                                 command))))
+                             #:select? build-module?)
+       #~(begin
+           (use-modules (sagittarius build locked))
+           (apply run-locked #$(locked-command-program command)
+                  '#$(map locked-rule->spec (locked-command-rules command))
+                  #:dbus-proxy #$(and (locked-command-dbus command)
+                                      (file-append xdg-dbus-proxy
+                                                   "/bin/xdg-dbus-proxy"))
+                  '#$(locked-command-options command)))))))
+
+(define* (make-locked-package original commands
+                              #:key (name (string-append (package-name original)
+                                                         "-locked"))
+                              (description (package-description original)))
+  "Return a package providing COMMANDS in place of the programs of
+ORIGINAL."
   (package
     (name name)
     (version (package-version original))
@@ -43,69 +250,20 @@ that start one of COMMANDS.  DESCRIPTION replaces that of ORIGINAL."
     (build-system trivial-build-system)
     (arguments
      (list
-      #:modules '((guix build utils))
       #:builder
-      #~(begin
-          (use-modules (guix build utils)
-                       (ice-9 ftw)
-                       (ice-9 regex)
-                       (ice-9 textual-ports)
-                       (srfi srfi-1)
-                       (srfi srfi-26))
-
-          (define names '#$(map car commands))
-          (define programs (list #$@(map cdr commands)))
-          (define share (string-append #$original "/share"))
-          (define original-bin (string-append #$original "/bin/"))
-          (define bin (string-append #$output "/bin/"))
-
-          (define (starts-command? entry)
-            (let ((text (call-with-input-file entry get-string-all)))
-              (any (lambda (name)
-                     (string-match (string-append (regexp-quote original-bin)
-                                                  (regexp-quote name)
-                                                  "( |$)")
-                                   text))
-                   names)))
-
-          (define (install-commands)
-            (mkdir-p bin)
-            (for-each (lambda (name program)
-                        (symlink program (string-append bin name)))
-                      names programs))
-
-          (define (link-data)
-            (mkdir-p (string-append #$output "/share"))
-            (for-each (lambda (entry)
-                        (symlink (string-append share "/" entry)
-                                 (string-append #$output "/share/" entry)))
-                      (scandir share
-                               (negate (cut member <>
-                                            '("." ".." "applications"))))))
-
-          (define (desktop-entries)
-            (let ((directory (string-append share "/applications")))
-              (if (file-exists? directory)
-                  (filter starts-command? (find-files directory "\\.desktop$"))
-                  '())))
-
-          (define (install-desktop-entries)
-            (let ((applications (string-append #$output "/share/applications"))
-                  (entries (desktop-entries)))
-              (unless (null? entries)
-                (mkdir-p applications)
-                (for-each (lambda (entry)
-                            (let ((target (string-append applications "/"
-                                                         (basename entry))))
-                              (copy-file entry target)
-                              (substitute* target
-                                (((regexp-quote original-bin)) bin))))
-                          entries))))
-
-          (install-commands)
-          (when (file-exists? share)
-            (link-data)
-            (install-desktop-entries)))))
+      (with-imported-modules (source-module-closure
+                              '((sagittarius build locked-package))
+                              #:select? build-module?)
+        #~(begin
+            (use-modules (sagittarius build locked-package))
+            (install-locked-package
+             #$original #$output
+             (map cons
+                  '#$(map locked-command-name commands)
+                  (list #$@(map locked-command-program-file commands))))))))
+    (inputs (list original))
+    (supported-systems (filter (cut string-suffix? "-linux" <>)
+                               (package-supported-systems original)))
     (home-page (package-home-page original))
     (synopsis (package-synopsis original))
     (description

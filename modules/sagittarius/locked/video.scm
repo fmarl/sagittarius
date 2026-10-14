@@ -7,21 +7,21 @@
   #:use-module (sagittarius locked))
 
 (define-public mpv-locked
-  (locked-package
+  (make-locked-package
    mpv
-   (list (locked-command "mpv" (file-append mpv "/bin/mpv")
-                         #~(lambda (arguments)
-                             (append (base-rules)
-                                     (graphics-rules)
-                                     (font-rules)
-                                     (config-rules "mpv")
-                                     (state-rules "mpv")
-                                     (list (read-write (cache-path "mpv")
-                                                       #:create? #t))
-                                     (argument-rules arguments)
-                                     (if (url-arguments? arguments)
-                                         (append (dns-rules)
-                                                 (tcp-rules 80 443))
-                                         '())))
-                         #:wayland? #t
-                         #:pipewire? #t))))
+   (list (locked-command
+           (name "mpv")
+           (program (file-append mpv "/bin/mpv"))
+           (rules (list %graphics
+                        %fonts
+                        (xdg-config "mpv")
+                        (xdg-state "mpv")
+                        (xdg-cache "mpv")
+                        %argument-files
+                        (when-network-arguments
+                         #:playlists '(".m3u" ".m3u8" ".pls")
+                         %dns (tcp-ports 80 443))))
+           (wayland 'restricted)
+           (pipewire? #t)
+           (preserved-environment-variables
+            (cons "MPV_*" %default-preserved-environment-variables))))))
