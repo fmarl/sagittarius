@@ -14,4 +14,5 @@
            (program (file-append pinentry-bemenu "/bin/pinentry-bemenu"))
            (rules (list %fonts))
            (wayland 'full)
-           (runtime-directory? #t)))))
+           (runtime-directory? #t)
+           (executes? #f)))))

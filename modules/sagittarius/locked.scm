@@ -42,6 +42,7 @@
             locked-command-temporary-directory?
             locked-command-environment
             locked-command-preserved-environment-variables
+            locked-command-executes?
             locked-command-syscall-allowances
             locked-command-program-file
 
@@ -193,6 +194,8 @@ URLs or playlists with the #:playlists extensions."
   (preserved-environment-variables
    locked-command-preserved-environment-variables
    (default %default-preserved-environment-variables))
+  (executes?            locked-command-executes?
+                        (default #t))
   (syscall-allowances   locked-command-syscall-allowances ;list of groups
                         (default '())
                         (sanitize validate-syscall-allowances)))
@@ -200,7 +203,8 @@ URLs or playlists with the #:playlists extensions."
 (define (locked-command-options command)
   (match-record command <locked-command>
     (name wayland pipewire? dbus runtime-directory? temporary-directory?
-          environment preserved-environment-variables syscall-allowances)
+          environment preserved-environment-variables executes?
+          syscall-allowances)
     (list #:name name
           #:wayland wayland
           #:pipewire? pipewire?
@@ -209,6 +213,7 @@ URLs or playlists with the #:playlists extensions."
           #:temporary-directory? temporary-directory?
           #:environment environment
           #:preserved-environment-variables preserved-environment-variables
+          #:executes? executes?
           #:syscall-allowances syscall-allowances)))
 
 (define (build-module? name)

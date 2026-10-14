@@ -3,24 +3,52 @@
 
 (define-module (sagittarius build locked rules)
   #:autoload (landlock) (%landlock-read-access landlock-path landlock-port)
+  #:use-module (ice-9 binary-ports)
   #:use-module (ice-9 match)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 textual-ports)
+  #:use-module (rnrs bytevectors)
+  #:use-module (sagittarius build locked errors)
   #:use-module (sagittarius build locked files)
   #:use-module (sagittarius build locked kinds)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
+  #:use-module (system vm elf)
   #:use-module (web uri)
   #:export (base-rules
             rule-kinds))
 
-(define (base-rules)
-  (list (landlock-path "/gnu/store" %landlock-read-access)
-        (read-only-rule "/etc")
-        (landlock-path "/dev/null" '(read-file write-file))
-        (read-only-rule "/dev/urandom")
-        (landlock-path (string-append "/proc/" (number->string (getpid)))
-                       '(read-file read-dir write-file))))
+(define (segment-string bytes segment)
+  (let ((string (make-bytevector (1- (elf-segment-filesz segment)))))
+    (bytevector-copy! bytes (elf-segment-offset segment)
+                      string 0 (bytevector-length string))
+    (utf8->string string)))
+
+(define (elf-interpreters program)
+  (let ((bytes (call-with-input-file program get-bytevector-all #:binary #t)))
+    (unless (has-elf-header? bytes)
+      (raise-locked-error "cannot tell what ~a runs, it is no ELF file"
+                          program))
+    (filter-map (lambda (segment)
+                  (and (= (elf-segment-type segment) PT_INTERP)
+                       (segment-string bytes segment)))
+                (elf-segments (parse-elf bytes)))))
+
+(define (store-rules program executes?)
+  (if executes?
+      (list (landlock-path "/gnu/store" %landlock-read-access))
+      (cons (read-only-rule "/gnu/store")
+            (map (cut landlock-path <> '(execute))
+                 (cons program (elf-interpreters program))))))
+
+(define (base-rules program executes?)
+  (append (store-rules program executes?)
+          (list (read-only-rule "/etc")
+                (landlock-path "/dev/null" '(read-file write-file))
+                (read-only-rule "/dev/urandom")
+                (landlock-path (string-append "/proc/"
+                                              (number->string (getpid)))
+                               '(read-file read-dir write-file)))))
 
 (define (argument-file argument)
   "Return the file that ARGUMENT, a file:// URI or --NAME=VALUE names."

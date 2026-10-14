@@ -74,6 +74,7 @@
                      (environment '())
                      (preserved-environment-variables
                       %default-preserved-environment-variables)
+                     (executes? #t)
                      (syscall-allowances '()))
   "Execute PROGRAM as NAME, confined by Landlock and seccomp."
   (define (grant-when condition proc . arguments)
@@ -108,7 +109,7 @@
                  (append '(("MESA_SHADER_CACHE_DISABLE" . "true"))
                          environment
                          (append-map grant-variables grants)))
-       (enforce-rules! (append (base-rules) rules
+       (enforce-rules! (append (base-rules program executes?) rules
                                (append-map grant-rules grants)))
        (enforce-syscall-filter! syscall-allowances)
        (apply execl program name arguments)))))

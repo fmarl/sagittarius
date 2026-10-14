@@ -16,4 +16,5 @@
                         %fonts
                         (xdg-config "imv")
                         %argument-files))
-           (wayland 'restricted)))))
+           (wayland 'restricted)
+           (executes? #f)))))

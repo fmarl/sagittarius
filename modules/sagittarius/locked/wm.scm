@@ -15,7 +15,8 @@
            (rules (list %fonts
                         %shm
                         %argument-files))
-           (wayland 'full)))))
+           (wayland 'full)
+           (executes? #f)))))
 
 (define-public mako-locked
   (make-locked-package

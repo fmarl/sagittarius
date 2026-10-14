@@ -123,7 +123,7 @@
 (define-internal (sagittarius build locked syscalls)
   enforce-syscall-filter!)
 (define-internal (sagittarius build locked rules)
-  user-directory argument-file network-arguments?)
+  base-rules elf-interpreters user-directory argument-file network-arguments?)
 (define-internal (sagittarius build locked virtualization)
   qemu-rules)
 (define-internal (sagittarius build locked wayland)
@@ -412,6 +412,45 @@
 
 (unless (>= (landlock-abi-version) 9)
   (test-skip "share-socket! only grants the socket"))
+
+(define (store-program name)
+  (canonicalize-path (search-path (parse-path (getenv "PATH")) name)))
+
+(define (exit-status-under rules command)
+  (flush-all-ports)
+  (match (primitive-fork)
+    (0
+     (catch #t
+       (lambda ()
+         (landlock-restrict! rules)
+         (apply execl (car command) command))
+       (lambda _
+         (primitive-_exit 127))))
+    (pid
+     (status:exit-val (cdr (waitpid pid))))))
+
+(test-assert "elf-interpreters finds the dynamic loader"
+  (match (elf-interpreters (store-program "true"))
+    ((loader) (string-contains loader "/ld-"))
+    (_ #f)))
+
+(test-assert "elf-interpreters rejects scripts"
+  (call-with-temporary-directory
+   (lambda (directory)
+     (let ((script (string-append directory "/script")))
+       (write-file script "#!/bin/sh\n")
+       (guard (exception ((locked-error? exception) #t))
+         (elf-interpreters script)
+         #f)))))
+
+(test-equal "without executes?, the program can't run others"
+  '(0 126)
+  (let ((sh (store-program "sh"))
+        (true (store-program "true")))
+    (map (lambda (executes?)
+           (exit-status-under (base-rules sh executes?)
+                              (list sh "-c" (string-append true "; exit $?"))))
+         '(#t #f))))
 
 (test-equal "share-socket! only grants the socket"
   '(#t #f)
