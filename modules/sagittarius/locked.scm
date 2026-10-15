@@ -46,6 +46,7 @@
             locked-command-environment
             locked-command-preserved-environment-variables
             locked-command-executes?
+            locked-command-deny-write-execute?
             locked-command-resource-limits
             locked-command-syscall-allowances
             locked-command-program-file
@@ -219,6 +220,8 @@ URLs or playlists with the #:playlists extensions."
    (default %default-preserved-environment-variables))
   (executes?            locked-command-executes?
                         (default #t))
+  (deny-write-execute?  locked-command-deny-write-execute?
+                        (default #f))
   (resource-limits      locked-command-resource-limits ;alist
                         (default %default-resource-limits)
                         (sanitize validate-resource-limits))
@@ -230,7 +233,7 @@ URLs or playlists with the #:playlists extensions."
   (match-record command <locked-command>
     (name wayland pipewire? dbus runtime-directory? temporary-directory?
           environment preserved-environment-variables executes?
-          resource-limits syscall-allowances)
+          deny-write-execute? resource-limits syscall-allowances)
     (list #:name name
           #:wayland wayland
           #:pipewire? pipewire?
@@ -240,6 +243,7 @@ URLs or playlists with the #:playlists extensions."
           #:environment environment
           #:preserved-environment-variables preserved-environment-variables
           #:executes? executes?
+          #:deny-write-execute? deny-write-execute?
           #:resource-limits resource-limits
           #:syscall-allowances syscall-allowances)))
 

@@ -6,12 +6,16 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 threads)
+  #:use-module (sagittarius build locked errors)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-26)
+  #:use-module (system foreign)
+  #:use-module (system foreign-library)
   #:export (inherit-across-exec!
             spawn-detached
             detach-from-terminal!
             close-on-exec-except
+            deny-write-execute!
             %default-resource-limits
             apply-resource-limits!))
 
@@ -32,6 +36,27 @@
   (for-each (lambda (fd)
               (false-if-exception (fcntl fd F_SETFD FD_CLOEXEC)))
             (open-fdes-except keep)))
+
+(define %pr-set-mdwe 65)
+(define %pr-mdwe-refuse-exec-gain 1)
+
+(define prctl
+  (delay (foreign-library-function #f "prctl"
+                                   #:return-type int
+                                   #:arg-types (list int unsigned-long
+                                                     unsigned-long
+                                                     unsigned-long
+                                                     unsigned-long)
+                                   #:return-errno? #t)))
+
+(define (deny-write-execute!)
+  (call-with-values
+      (lambda ()
+        ((force prctl) %pr-set-mdwe %pr-mdwe-refuse-exec-gain 0 0 0))
+    (lambda (result errno)
+      (when (< result 0)
+        (raise-locked-error "cannot deny writable executable memory: ~a"
+                            (strerror errno))))))
 
 (define %default-resource-limits
   '((core . 0) (rtprio . 0) (nice . 0)))

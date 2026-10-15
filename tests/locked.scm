@@ -119,7 +119,7 @@
 (define-internal (sagittarius build locked kinds)
   kind-name)
 (define-internal (sagittarius build locked process)
-  forward-signals-and-exit close-on-exec-except
+  forward-signals-and-exit close-on-exec-except deny-write-execute!
   apply-resource-limits!)
 (define-internal (sagittarius build locked syscalls)
   enforce-syscall-filter!)
@@ -197,6 +197,12 @@
    (locked-command
      (name "true")
      (program "/bin/true"))))
+
+(test-assert "locked-command only denies writable executable memory on request"
+  (not (locked-command-deny-write-execute?
+        (locked-command
+          (name "true")
+          (program "/bin/true")))))
 
 (test-error "locked-command rejects invalid resource limits"
   #t
@@ -398,6 +404,40 @@
      (sleep 1)
      (kill supervisor SIGTERM)
      (status:exit-val (cdr (waitpid supervisor))))))
+
+(define %prot-read 1)
+(define %prot-write 2)
+(define %prot-exec 4)
+(define %map-private 2)
+(define %map-anonymous #x20)
+
+(define mmap
+  (foreign-library-function #f "mmap" #:return-type '*
+                            #:arg-types (list '* size_t int int int long)))
+
+(define mprotect
+  (foreign-library-function #f "mprotect" #:return-type int
+                            #:arg-types (list '* size_t int)
+                            #:return-errno? #t))
+
+(define (make-written-executable)
+  (let ((page (mmap %null-pointer 4096 (logior %prot-read %prot-write)
+                    (logior %map-private %map-anonymous) -1 0)))
+    (call-with-values
+        (lambda ()
+          (mprotect page 4096 (logior %prot-read %prot-exec)))
+      (lambda (result errno)
+        (if (< result 0) errno 0)))))
+
+(test-equal "deny-write-execute! keeps written memory from being executed"
+  (list 0 EACCES)
+  (map (lambda (deny?)
+         (in-child
+          (lambda ()
+            (when deny?
+              (deny-write-execute!))
+            (make-written-executable))))
+       '(#f #t)))
 
 (test-equal "close-on-exec-except"
   '(#t #f)
