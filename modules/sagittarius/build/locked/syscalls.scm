@@ -30,8 +30,10 @@
   (let ((newuser (seccomp-argument 0 'masked= %clone-newuser
                                    #:mask %clone-newuser)))
     (list (denied 'unshare newuser)
-          (denied 'clone newuser)
-          (seccomp-rule 'clone3 `(errno ,ENOSYS)))))
+          (denied 'clone newuser))))
+
+(define (clone3-rules)
+  (list (seccomp-rule 'clone3 `(errno ,ENOSYS))))
 
 (define (socket-families-rules)
   (define (unsupported . arguments)
@@ -72,12 +74,22 @@
     (perf . ,perf-rules)
     (personality . ,personality-rules)))
 
-(define (enforce-syscall-filter! allowances)
-  (let ((status (seccomp-restrict!
-                 (append-map (match-lambda
-                               ((name . rules)
-                                (if (memq name allowances) '() (rules))))
-                             %syscall-groups))))
+(define %quiet-syscall-groups
+  `((user-namespaces . ,clone3-rules)))
+
+(define (group-rules groups allowances)
+  (append-map (match-lambda
+                ((name . rules)
+                 (if (memq name allowances) '() (rules))))
+              groups))
+
+(define (restrict! rules flags)
+  (let ((status (seccomp-restrict! rules #:flags flags)))
     (unless (eq? status 'fully-enforced)
       (raise-locked-error "seccomp cannot enforce the whole filter (~a)"
                           status))))
+
+(define (enforce-syscall-filter! allowances)
+  (restrict! (group-rules %syscall-groups allowances) '(log))
+  ;; glibc tries clone3 for every thread, so its fallback stays unlogged
+  (restrict! (group-rules %quiet-syscall-groups allowances) '()))

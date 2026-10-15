@@ -59,9 +59,15 @@
     (grant (list (read-write-rule directory))
            `((,variable . ,directory)))))
 
+(define %landlock-log-abi 7)
+
 (define (enforce-rules! rules)
-  (let ((status (landlock-restrict! rules
-                                    #:scope '(signal abstract-unix-socket))))
+  (let ((status (landlock-restrict!
+                 rules
+                 #:scope '(signal abstract-unix-socket)
+                 #:flags (if (>= (landlock-abi-version) %landlock-log-abi)
+                             '(log-new-exec-on)
+                             '()))))
     (unless (eq? status 'fully-enforced)
       (raise-locked-error "Landlock ABI ~a cannot enforce the whole sandbox \
 (~a)"
