@@ -24,4 +24,5 @@
            (wayland 'restricted)
            (pipewire? #t)
            (preserved-environment-variables
-            (cons "MPV_*" %default-preserved-environment-variables))))))
+            (cons "MPV_*" %default-preserved-environment-variables))
+           (deny-write-execute? #t)))))

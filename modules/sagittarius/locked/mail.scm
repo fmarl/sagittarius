@@ -17,7 +17,8 @@
                         ;; mu4e saves attachments there
                         (xdg-user-directory "DOWNLOAD" "Downloads")))
            ;; For the files it passes to mu4e
-           (temporary-directory? #t)))))
+           (temporary-directory? #t)
+           (deny-write-execute? #t)))))
 
 (define-public mbsync-locked
   (make-locked-package
@@ -32,7 +33,8 @@
                         %gnupg
                         (home-file ".mbsyncrc")
                         (xdg-config "isyncrc")
-                        %mail-directory))))
+                        %mail-directory))
+           (deny-write-execute? #t)))
    #:name "mbsync-locked"
    ;; isync's own starts with a lower-case letter
    #:description "Mbsync synchronizes mailboxes in both directions.  It
@@ -52,4 +54,5 @@ supports Maildir and IMAP."))
                         (xdg-config "msmtp")
                         (xdg-state "msmtp")
                         (home-file ".msmtprc")))
-           (temporary-directory? #t)))))
+           (temporary-directory? #t)
+           (deny-write-execute? #t)))))

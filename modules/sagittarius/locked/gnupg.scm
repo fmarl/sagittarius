@@ -15,4 +15,5 @@
            (rules (list %fonts))
            (wayland 'full)
            (runtime-directory? #t)
-           (executes? #f)))))
+           (executes? #f)
+           (deny-write-execute? #t)))))
