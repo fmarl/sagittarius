@@ -119,7 +119,7 @@
 (define-internal (sagittarius build locked kinds)
   kind-name)
 (define-internal (sagittarius build locked process)
-  forward-signals-and-exit)
+  forward-signals-and-exit close-on-exec-except)
 (define-internal (sagittarius build locked syscalls)
   enforce-syscall-filter!)
 (define-internal (sagittarius build locked rules)
@@ -383,6 +383,18 @@
      (sleep 1)
      (kill supervisor SIGTERM)
      (status:exit-val (cdr (waitpid supervisor))))))
+
+(test-equal "close-on-exec-except"
+  '(#t #f)
+  (in-child
+   (lambda ()
+     (let ((closed (port->fdes (open-input-file "/dev/null")))
+           (kept (port->fdes (open-input-file "/dev/null"))))
+       (fcntl kept F_SETFD 0)
+       (close-on-exec-except (list 0 1 2 kept))
+       (map (lambda (fd)
+              (= FD_CLOEXEC (logand FD_CLOEXEC (fcntl fd F_GETFD))))
+            (list closed kept))))))
 
 (test-assert "make-instance-directory removes those of exited processes"
   (call-with-runtime-directory

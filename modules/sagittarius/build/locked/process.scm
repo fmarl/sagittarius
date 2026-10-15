@@ -7,19 +7,30 @@
   #:use-module (ice-9 textual-ports)
   #:use-module (ice-9 threads)
   #:use-module (srfi srfi-1)
+  #:use-module (srfi srfi-26)
   #:export (inherit-across-exec!
             spawn-detached
-            detach-from-terminal!))
+            detach-from-terminal!
+            close-on-exec-except))
 
 (define (inherit-across-exec! port)
   ;; Revealed descriptors stay open across exec
   (port->fdes port))
 
+(define (open-fdes-except keep)
+  (remove (cut memv <> keep)
+          (filter-map string->number (scandir "/proc/self/fd"))))
+
 (define (close-fdes-except keep)
   (for-each (lambda (fd)
-              (unless (memv fd keep)
-                (false-if-exception (close-fdes fd))))
-            (filter-map string->number (scandir "/proc/self/fd"))))
+              (false-if-exception (close-fdes fd)))
+            (open-fdes-except keep)))
+
+(define (close-on-exec-except keep)
+  (for-each (lambda (fd)
+              (false-if-exception (fcntl fd F_SETFD FD_CLOEXEC)))
+            (open-fdes-except keep)))
+
 
 (define (spawn-detached fd program . arguments)
   "Run PROGRAM detached, with only the standard descriptors and FD."

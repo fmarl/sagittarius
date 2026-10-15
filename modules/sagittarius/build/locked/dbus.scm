@@ -25,7 +25,7 @@
          ;; xdg-dbus-proxy writes a byte once it listens
          (when (eof-object? (read-char read-end))
            (raise-locked-error "cannot start xdg-dbus-proxy"))
-         (inherit-across-exec! read-end)
          (grant (list (landlock-path directory '(resolve-unix)))
                 `(("DBUS_SESSION_BUS_ADDRESS"
-                   . ,(string-append "unix:path=" bus)))))))))
+                   . ,(string-append "unix:path=" bus)))
+                (list (inherit-across-exec! read-end))))))))

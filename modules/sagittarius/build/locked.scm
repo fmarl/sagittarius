@@ -119,4 +119,5 @@
        (enforce-rules! (append (base-rules program executes?) rules
                                (append-map grant-rules grants)))
        (enforce-syscall-filter! syscall-allowances)
+       (close-on-exec-except (cons* 0 1 2 (append-map grant-fds grants)))
        (apply execl program name arguments)))))

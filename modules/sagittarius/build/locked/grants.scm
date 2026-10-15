@@ -6,12 +6,17 @@
   #:export (grant
             grant-rules
             grant-variables
+            grant-fds
             %no-grant))
 
 (define-record-type <grant>
-  (grant rules variables)
+  (make-grant rules variables fds)
   grant?
   (rules     grant-rules)
-  (variables grant-variables))                  ;alist
+  (variables grant-variables)                   ;alist
+  (fds       grant-fds))                        ;kept open across exec
+
+(define* (grant rules variables #:optional (fds '()))
+  (make-grant rules variables fds))
 
 (define %no-grant (grant '() '()))
