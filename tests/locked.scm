@@ -119,7 +119,8 @@
 (define-internal (sagittarius build locked kinds)
   kind-name)
 (define-internal (sagittarius build locked process)
-  forward-signals-and-exit close-on-exec-except)
+  forward-signals-and-exit close-on-exec-except
+  apply-resource-limits!)
 (define-internal (sagittarius build locked syscalls)
   enforce-syscall-filter!)
 (define-internal (sagittarius build locked rules)
@@ -189,6 +190,20 @@
      (name "true")
      (program "/bin/true")
      (syscall-allowances '(user-namespaces)))))
+
+(test-equal "locked-command resource limits default"
+  %default-resource-limits
+  (locked-command-resource-limits
+   (locked-command
+     (name "true")
+     (program "/bin/true"))))
+
+(test-error "locked-command rejects invalid resource limits"
+  #t
+  (locked-command
+    (name "true")
+    (program "/bin/true")
+    (resource-limits '((cores . 0) (nofile . -1)))))
 
 (test-error "locked-command rejects unknown system call groups"
   #t
@@ -395,6 +410,15 @@
        (map (lambda (fd)
               (= FD_CLOEXEC (logand FD_CLOEXEC (fcntl fd F_GETFD))))
             (list closed kept))))))
+
+(test-equal "apply-resource-limits!"
+  '((0 0) (0 0))
+  (in-child
+   (lambda ()
+     (apply-resource-limits! %default-resource-limits)
+     (map (lambda (resource)
+            (call-with-values (lambda () (getrlimit resource)) list))
+          '(core rtprio)))))
 
 (test-assert "make-instance-directory removes those of exited processes"
   (call-with-runtime-directory

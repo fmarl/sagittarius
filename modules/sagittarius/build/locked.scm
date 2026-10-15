@@ -98,6 +98,7 @@
                      (preserved-environment-variables
                       %default-preserved-environment-variables)
                      (executes? #t)
+                     (resource-limits %default-resource-limits)
                      (syscall-allowances '()))
   "Execute PROGRAM as NAME, confined by Landlock and seccomp."
   (call-with-error-reporting
@@ -119,5 +120,6 @@
        (enforce-rules! (append (base-rules program executes?) rules
                                (append-map grant-rules grants)))
        (enforce-syscall-filter! syscall-allowances)
+       (apply-resource-limits! resource-limits)
        (close-on-exec-except (cons* 0 1 2 (append-map grant-fds grants)))
        (apply execl program name arguments)))))

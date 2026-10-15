@@ -11,7 +11,9 @@
   #:export (inherit-across-exec!
             spawn-detached
             detach-from-terminal!
-            close-on-exec-except))
+            close-on-exec-except
+            %default-resource-limits
+            apply-resource-limits!))
 
 (define (inherit-across-exec! port)
   ;; Revealed descriptors stay open across exec
@@ -31,6 +33,14 @@
               (false-if-exception (fcntl fd F_SETFD FD_CLOEXEC)))
             (open-fdes-except keep)))
 
+(define %default-resource-limits
+  '((core . 0) (rtprio . 0) (nice . 0)))
+
+(define (apply-resource-limits! limits)
+  (for-each (match-lambda
+              ((resource . limit)
+               (setrlimit resource limit limit)))
+            limits))
 
 (define (spawn-detached fd program . arguments)
   "Run PROGRAM detached, with only the standard descriptors and FD."

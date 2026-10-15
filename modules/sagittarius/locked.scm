@@ -15,13 +15,16 @@
   #:use-module (sagittarius build locked environment)
   #:use-module ((sagittarius build locked kinds)
                 #:select (module-rule-kind-names))
+  #:use-module ((sagittarius build locked process)
+                #:select (%default-resource-limits))
   #:use-module ((sagittarius build locked syscalls)
                 #:select (%syscall-groups))
   #:use-module (sagittarius packages guile-xyz)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-26)
-  #:re-export (%default-preserved-environment-variables)
+  #:re-export (%default-preserved-environment-variables
+               %default-resource-limits)
   #:export (locked-rule?
             locked-rule-module
             locked-rule-kind
@@ -43,6 +46,7 @@
             locked-command-environment
             locked-command-preserved-environment-variables
             locked-command-executes?
+            locked-command-resource-limits
             locked-command-syscall-allowances
             locked-command-program-file
 
@@ -163,6 +167,25 @@ URLs or playlists with the #:playlists extensions."
          (G_ "Wayland access is not #f, 'restricted or 'full: ~s")
          value)))))
 
+(define %resources
+  '(as core cpu data fsize memlock msgqueue nice nofile nproc rss rtprio
+    rttime sigpending stack))
+
+(define (resource-limit? limit)
+  (match limit
+    ((resource . value)
+     (and (memq resource %resources)
+          (or (not value)
+              (and (exact-integer? value) (>= value 0)))))
+    (_ #f)))
+
+(define (validate-resource-limits limits)
+  (let ((invalid (remove resource-limit? limits)))
+    (unless (null? invalid)
+      (raise-exception
+       (formatted-message (G_ "invalid resource limits: ~s") invalid)))
+    limits))
+
 (define (validate-syscall-allowances allowances)
   (let ((unknown (remove (cut assq <> %syscall-groups) allowances)))
     (unless (null? unknown)
@@ -196,6 +219,9 @@ URLs or playlists with the #:playlists extensions."
    (default %default-preserved-environment-variables))
   (executes?            locked-command-executes?
                         (default #t))
+  (resource-limits      locked-command-resource-limits ;alist
+                        (default %default-resource-limits)
+                        (sanitize validate-resource-limits))
   (syscall-allowances   locked-command-syscall-allowances ;list of groups
                         (default '())
                         (sanitize validate-syscall-allowances)))
@@ -204,7 +230,7 @@ URLs or playlists with the #:playlists extensions."
   (match-record command <locked-command>
     (name wayland pipewire? dbus runtime-directory? temporary-directory?
           environment preserved-environment-variables executes?
-          syscall-allowances)
+          resource-limits syscall-allowances)
     (list #:name name
           #:wayland wayland
           #:pipewire? pipewire?
@@ -214,6 +240,7 @@ URLs or playlists with the #:playlists extensions."
           #:environment environment
           #:preserved-environment-variables preserved-environment-variables
           #:executes? executes?
+          #:resource-limits resource-limits
           #:syscall-allowances syscall-allowances)))
 
 (define (build-module? name)
