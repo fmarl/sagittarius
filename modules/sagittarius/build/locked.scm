@@ -67,6 +67,29 @@
 (~a)"
                           (landlock-abi-version) status))))
 
+(define (program-grants name wayland pipewire? dbus dbus-proxy
+                        runtime-directory? temporary-directory?)
+  (define (grant-when condition proc . arguments)
+    (if condition (apply proc arguments) %no-grant))
+
+  (list (match wayland
+          (#f %no-grant)
+          ('restricted (share-wayland-context! name))
+          ('full (share-wayland!)))
+        (grant-when pipewire? share-pipewire!)
+        (grant-when dbus share-dbus! dbus-proxy dbus)
+        (grant-when runtime-directory?
+                    private-directory! "runtime" "XDG_RUNTIME_DIR")
+        (grant-when temporary-directory?
+                    private-directory! "tmp" "TMPDIR")))
+
+(define (set-environment! preserved variables)
+  (preserve-environment! preserved)
+  (for-each (match-lambda
+              ((variable . value) (setenv variable value)))
+            ;; Through a shared shader cache, programs could poison others
+            (cons '("MESA_SHADER_CACHE_DISABLE" . "true") variables)))
+
 (define* (run-locked program specs
                      #:key (name (basename program))
                      wayland pipewire? dbus dbus-proxy
@@ -77,9 +100,6 @@
                      (executes? #t)
                      (syscall-allowances '()))
   "Execute PROGRAM as NAME, confined by Landlock and seccomp."
-  (define (grant-when condition proc . arguments)
-    (if condition (apply proc arguments) %no-grant))
-
   (call-with-error-reporting
    (lambda ()
      ;; It may fork, and the rules name the PID
@@ -87,28 +107,15 @@
      (let* ((resolved (map resolve-spec specs))
             (arguments (cdr (command-line)))
             (rules (landlock-rules resolved arguments))
-            ;; Grants read variables that preserve-environment! drops
-            (grants
-             (list (match wayland
-                     (#f %no-grant)
-                     ('restricted (share-wayland-context! name))
-                     ('full (share-wayland!)))
-                   (grant-when pipewire? share-pipewire!)
-                   (grant-when dbus share-dbus! dbus-proxy dbus)
-                   (grant-when runtime-directory?
-                               private-directory! "runtime" "XDG_RUNTIME_DIR")
-                   (grant-when temporary-directory?
-                               private-directory! "tmp" "TMPDIR"))))
-       (preserve-environment!
-        (append preserved-environment-variables
-                (append-map rule-kind-variables
-                            (resolved-rule-kinds resolved))))
-       (for-each (match-lambda
-                   ((variable . value) (setenv variable value)))
-                 ;; Through a shared shader cache, programs could poison others
-                 (append '(("MESA_SHADER_CACHE_DISABLE" . "true"))
-                         environment
-                         (append-map grant-variables grants)))
+            ;; Grants read variables that set-environment! drops
+            (grants (program-grants name wayland pipewire? dbus dbus-proxy
+                                    runtime-directory?
+                                    temporary-directory?)))
+       (set-environment! (append preserved-environment-variables
+                                 (append-map rule-kind-variables
+                                             (resolved-rule-kinds resolved)))
+                         (append environment
+                                 (append-map grant-variables grants)))
        (enforce-rules! (append (base-rules program executes?) rules
                                (append-map grant-rules grants)))
        (enforce-syscall-filter! syscall-allowances)
