@@ -12,27 +12,24 @@ package-expressions = $(foreach file,\
 
 PACKAGES := $(call package-expressions,packages)
 LOCKED := $(call package-expressions,locked)
+VMS := $(foreach vm,$(basename $(notdir $(wildcard modules/sagittarius/vms/*.scm))),\
+    -e '(@ (sagittarius vms $(vm)) $(vm)-vm)')
 MODULES := $(shell find modules -name '*.scm' | sort)
 
-REPL = $(GUIX) repl -L $(CURDIR)/modules \
-    -L $(shell $(GUIX) build -L $(CURDIR)/modules guile-landlock)/share/guile/site/3.0 \
-    -L $(shell $(GUIX) build -L $(CURDIR)/modules guile-seccomp)/share/guile/site/3.0
+REPL = $(GUIX) repl -L $(CURDIR)/modules
 
-.PHONY: check lint test warnings
+.PHONY: check lint warnings
 
 # Building the locked packages compiles the runtime of their wrappers
 check:
 	$(GUIX) build -L $(CURDIR)/modules --dry-run $(PACKAGES)
 	$(GUIX) build -L $(CURDIR)/modules $(LOCKED)
+	$(GUIX) build -L $(CURDIR)/modules --dry-run $(VMS)
 	$(MAKE) warnings
 	$(MAKE) lint
-	$(MAKE) test
 
 warnings:
 	$(REPL) -- etc/check-warnings.scm $(MODULES)
-
-test:
-	$(REPL) -- tests/locked.scm
 
 # 'guix style' cannot edit the packages that 'make-locked-package' makes.
 lint:

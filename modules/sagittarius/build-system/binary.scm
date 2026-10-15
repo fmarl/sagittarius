@@ -18,34 +18,22 @@
             binary-build
             binary-build-system))
 
-;; Commentary:
-;;
-;; Standard build procedure for binary packages.  This is implemented as an
-;; extension of `copy-build-system'.
 ;; Copied and modified from the nonguix project.
-;;
-;; Code:
 
 (define %binary-build-system-modules
   `((sagittarius build binary-build-system)
     ,@%copy-build-system-modules))
 
 (define (default-patchelf)
-  "Return the default patchelf package."
-  ;; Do not use `@' to avoid introducing circular dependencies.
-  (let ((module (resolve-interface '(gnu packages elf))))
-    ;; Use the older 0.16 version due to an upstream bug which can segfault
-    ;; some binaries.  See <https://github.com/NixOS/patchelf/issues/482>.
-    ;; TODO: Set back to patchelf once Guix has version 0.19.0 or later,
-    ;; which is the first to include the fix.
-    (module-ref module 'patchelf-0.16)))
+  ;; Later versions before 0.19 can segfault on some binaries, see
+  ;; <https://github.com/NixOS/patchelf/issues/482>.
+  (@ (gnu packages elf) patchelf-0.16))
 
 (define* (lower name
                 #:key source inputs native-inputs outputs system target
                 (patchelf (default-patchelf))
                 #:allow-other-keys
                 #:rest arguments)
-  "Return a bag for NAME."
   (define private-keywords
     '(#:target #:patchelf #:inputs #:native-inputs))
 
@@ -126,5 +114,3 @@ provides its own binaries."
     (name 'binary)
     (description "The standard binary build system")
     (lower lower)))
-
-;;; binary.scm ends here

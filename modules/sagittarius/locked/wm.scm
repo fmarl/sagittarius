@@ -4,7 +4,7 @@
 (define-module (sagittarius locked wm)
   #:use-module (gnu packages window-management)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public swaybg-locked
   (make-locked-package

@@ -4,7 +4,7 @@
 (define-module (sagittarius locked pdf)
   #:use-module (gnu packages pdf)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public zathura-locked
   (make-locked-package

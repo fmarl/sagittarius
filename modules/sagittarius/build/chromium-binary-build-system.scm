@@ -8,12 +8,7 @@
   #:use-module (ice-9 ftw)
   #:export (%standard-phases))
 
-;; Commentary:
-;;
-;; Builder-side code of the Chromium binary build procedure.
 ;; Copied and modified from the nonguix project.
-;;
-;; Code:
 
 (define* (install-wrapper #:key inputs outputs #:allow-other-keys)
   "Wrap the executables in the \"bin\" directory of the \"out\" output so that
@@ -44,5 +39,3 @@ they find the libraries and programs of INPUTS."
 (define %standard-phases
   (modify-phases binary:%standard-phases
     (add-after 'install 'install-wrapper install-wrapper)))
-
-;;; chromium-binary-build-system.scm ends here

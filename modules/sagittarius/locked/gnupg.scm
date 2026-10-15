@@ -4,7 +4,7 @@
 (define-module (sagittarius locked gnupg)
   #:use-module (gnu packages gnupg)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public pinentry-bemenu-locked
   (make-locked-package

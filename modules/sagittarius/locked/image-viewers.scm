@@ -4,7 +4,7 @@
 (define-module (sagittarius locked image-viewers)
   #:use-module (gnu packages image-viewers)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public imv-locked
   (make-locked-package

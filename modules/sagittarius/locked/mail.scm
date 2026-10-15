@@ -4,7 +4,7 @@
 (define-module (sagittarius locked mail)
   #:use-module (gnu packages mail)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public mu-locked
   (make-locked-package

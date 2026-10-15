@@ -5,4 +5,23 @@
  (directory "modules")
  (keyring-reference "keyring")
  (url "https://codeberg.org/fmarl/sagittarius.git")
- (news-file "NEWS"))
+ (news-file "NEWS")
+ (dependencies
+  (channel
+   (name guix-cage)
+   (url "https://github.com/fmarl/guix-cage")
+   (branch "main")
+   (introduction
+    (channel-introduction
+     (version 0)
+     (commit "56a634b5aae8a3c4e12a292ba87ac336a27ddcbc")
+     (signer "F2E3 8B47 808B AF7B 81D5  B27F 52C5 7B54 89B5 819D"))))
+  (channel
+   (name guix-microvm)
+   (url "https://github.com/fmarl/guix-microvm")
+   (branch "main")
+   (introduction
+    (channel-introduction
+     (version 0)
+     (commit "98a7990c273bae32085240cc762e6aac45e82fd9")
+     (signer "F2E3 8B47 808B AF7B 81D5  B27F 52C5 7B54 89B5 819D"))))))

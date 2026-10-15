@@ -35,13 +35,7 @@
             chromium-binary-build
             chromium-binary-build-system))
 
-;; Commentary:
-;;
-;; Standard build procedure for Chromium based binary packages.  This is
-;; implemented as an extension of `binary-build-system'.
 ;; Copied and modified from the nonguix project.
-;;
-;; Code:
 
 (define (add-input-labels . inputs)
   "Return INPUTS, each a package or a list of a package and an output,
@@ -170,5 +164,3 @@ files in WRAPPER-PLAN.  PATCHELF-PLAN is used only when WRAPPER-PLAN is empty."
     (name 'chromium-binary)
     (description "The Chromium based binary build system")
     (lower lower)))
-
-;;; chromium-binary.scm ends here

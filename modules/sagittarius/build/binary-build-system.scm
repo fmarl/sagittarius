@@ -14,12 +14,7 @@
   #:export (%standard-phases
             binary-build))
 
-;; Commentary:
-;;
-;; Builder-side code of the standard binary build procedure.
 ;; Copied and modified from the nonguix project.
-;;
-;; Code:
 
 (define* (patchelf #:key inputs outputs patchelf-plan #:allow-other-keys)
   "Set the interpreter and the RPATH of files as per the PATCHELF-PLAN.
@@ -55,7 +50,6 @@ The inputs are optional when the file is an executable."
                            ":")
               binary)))
 
-  (invoke "patchelf" "--version")
   (when (pair? patchelf-plan)
     (let ((interpreter (car (find-files (assoc-ref inputs "libc")
                                         "ld-linux.*\\.so"))))
@@ -104,5 +98,3 @@ contents into the \"binary\" directory and change to it."
                        #:allow-other-keys #:rest args)
   "Build the given package, applying all of PHASES in order."
   (apply gnu:gnu-build #:inputs inputs #:phases phases args))
-
-;;; binary-build-system.scm ends here

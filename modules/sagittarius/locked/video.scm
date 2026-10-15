@@ -4,7 +4,7 @@
 (define-module (sagittarius locked video)
   #:use-module (gnu packages video)
   #:use-module (guix gexp)
-  #:use-module (sagittarius locked))
+  #:use-module (guix-cage locked))
 
 (define-public mpv-locked
   (make-locked-package
