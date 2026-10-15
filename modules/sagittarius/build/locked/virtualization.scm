@@ -75,5 +75,13 @@
                       arguments)
           (usb-rules arguments)))
 
+(define (waypipe-client-rules arguments)
+  (match (and (member "client" arguments)
+              (or (member "--socket" arguments) (member "-s" arguments)))
+    ((_ socket . _)
+     (list (landlock-path (dirname socket) '(make-sock) #:optional? #t)))
+    (_ '())))
+
 (define (rule-kinds)
-  (list (rule-kind 'qemu qemu-rules)))
+  (list (rule-kind 'qemu qemu-rules)
+        (rule-kind 'waypipe-client waypipe-client-rules)))

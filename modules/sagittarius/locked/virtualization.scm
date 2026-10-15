@@ -2,12 +2,14 @@
 ;;; Copyright © 2026 Florian Marrero Liestmann <f.m.liestmann@fx-ttr.de>
 
 (define-module (sagittarius locked virtualization)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages virtualization)
   #:use-module (guix gexp)
   #:use-module (sagittarius locked))
 
 (define-locked-rules (sagittarius build locked virtualization)
-  %qemu)
+  %qemu
+  %waypipe-client)
 
 (define-public qemu-locked
   (make-locked-package
@@ -19,4 +21,21 @@
                         (read-only "/sys")
                         %qemu))
            (preserved-environment-variables
-            (cons "QEMU_*" %default-preserved-environment-variables))))))
+            (cons "QEMU_*" %default-preserved-environment-variables))
+           ;; KVM only, without TCG's code generator
+           (executes? #f)
+           (deny-write-execute? #t)))))
+
+(define-public waypipe-locked
+  (make-locked-package
+   waypipe
+   (list (locked-command
+           (name "waypipe")
+           (program (file-append waypipe "/bin/waypipe"))
+           (rules (list %waypipe-client))
+           ;; Outside a security context, to create its own
+           (wayland 'full)
+           ;; For the socket of its security context
+           (runtime-directory? #t)
+           (executes? #f)
+           (deny-write-execute? #t)))))

@@ -126,7 +126,7 @@
 (define-internal (sagittarius build locked rules)
   base-rules elf-interpreters user-directory argument-file network-arguments?)
 (define-internal (sagittarius build locked virtualization)
-  qemu-rules)
+  qemu-rules waypipe-client-rules)
 (define-internal (sagittarius build locked wayland)
   wayland-string wayland-string-ref wayland-message)
 (define-internal (sagittarius build locked-package)
@@ -705,6 +705,14 @@
                                                ",server=on"))))
                     `((,directory (make-sock))))
             (not (file-exists? path)))))))
+
+(test-equal "waypipe-client-rules"
+  '((("/run/vm" (make-sock))) (("/run/vm" (make-sock))) () ())
+  (map (compose (cut map rule->list <>) waypipe-client-rules)
+       '(("--socket" "/run/vm/w.sock" "--no-gpu" "client")
+         ("-s" "/run/vm/w.sock" "client")
+         ("--socket" "/run/vm/w.sock" "server" "--" "foot")
+         ("client"))))
 
 (define failures (test-runner-fail-count (test-runner-current)))
 (test-end "locked")
