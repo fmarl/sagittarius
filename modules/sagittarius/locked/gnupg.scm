@@ -16,4 +16,6 @@
            (wayland 'full)
            (runtime-directory? #t)
            (executes? #f)
+           (preserved-environment-variables
+            (cons "BEMENU_OPTS" %default-preserved-environment-variables))
            (deny-write-execute? #t)))))
