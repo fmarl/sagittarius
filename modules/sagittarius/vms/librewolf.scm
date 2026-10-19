@@ -29,6 +29,7 @@
   (microvm
     (operating-system %librewolf-system)
     (command '("dbus-run-session" "--" "librewolf"))
+    (volatile? #t)
     (wayland? #t)
     (usb? #t)
     (memory-size 6144)))
