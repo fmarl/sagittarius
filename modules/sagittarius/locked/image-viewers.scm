@@ -14,8 +14,8 @@
            (program (file-append imv "/bin/imv-wayland"))
            (rules (list %graphics
                         %fonts
+                        %wayland
                         (xdg-config "imv")
                         %argument-files))
-           (wayland 'restricted)
            (executes? #f)
            (deny-write-execute? #t)))))

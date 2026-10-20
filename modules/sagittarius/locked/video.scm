@@ -14,6 +14,8 @@
            (program (file-append mpv "/bin/mpv"))
            (rules (list %graphics
                         %fonts
+                        %wayland
+                        %pipewire
                         (xdg-config "mpv")
                         (xdg-state "mpv")
                         (xdg-cache "mpv")
@@ -21,8 +23,6 @@
                         (when-network-arguments
                          #:playlists '(".m3u" ".m3u8" ".pls")
                          %dns (tcp-ports 80 443))))
-           (wayland 'restricted)
-           (pipewire? #t)
            (preserved-environment-variables
             (cons "MPV_*" %default-preserved-environment-variables))
            (deny-write-execute? #t)))))

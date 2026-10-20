@@ -13,7 +13,7 @@
 (define-public claude-code
   (package
     (name "claude-code")
-    (version "2.1.286")
+    (version "2.1.300")
     (source
      (origin
        (method url-fetch)

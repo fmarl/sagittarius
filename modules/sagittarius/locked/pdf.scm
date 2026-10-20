@@ -14,8 +14,10 @@
            (name "zathura")
            (program (file-append zathura "/bin/zathura-sandbox"))
            (rules (list %fonts
+                        %wayland
                         (xdg-config "zathura")
                         (xdg-config "gtk-3.0")
                         %argument-files))
-           (wayland 'restricted)
-           (environment '(("NO_AT_BRIDGE" . "1")))))))
+           (environment '(("NO_AT_BRIDGE" . "1")))
+           (executes? #f)
+           (deny-write-execute? #t)))))

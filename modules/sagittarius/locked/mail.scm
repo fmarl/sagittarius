@@ -6,6 +6,13 @@
   #:use-module (guix gexp)
   #:use-module (guix-cage locked))
 
+(define %password-command
+  ;; secret decrypts the password with sops and gpg
+  (list %shell
+        (home-program ".local/bin/secret")
+        (home-file ".config/sops/secrets.yaml")
+        %gnupg))
+
 (define-public mu-locked
   (make-locked-package
    mu
@@ -15,9 +22,9 @@
            (rules (list %mail-directory
                         (xdg-cache "mu")
                         ;; mu4e saves attachments there
-                        (xdg-user-directory "DOWNLOAD" "Downloads")))
-           ;; For the files it passes to mu4e
-           (temporary-directory? #t)
+                        (xdg-user-directory "DOWNLOAD" "Downloads")
+                        ;; mu4e reads the files that mu writes there
+                        %shared-temporary-directory))
            (deny-write-execute? #t)))))
 
 (define-public mbsync-locked
@@ -26,14 +33,12 @@
    (list (locked-command
            (name "mbsync")
            (program (file-append isync "/bin/mbsync"))
-           (rules (list %dns
-                        (tcp-ports 143 993)
-                        %argument-files
-                        ;; For PassCmd decrypting with gpg
-                        %gnupg
-                        (home-file ".mbsyncrc")
-                        (xdg-config "isyncrc")
-                        %mail-directory))
+           (rules (cons* %dns
+                         (tcp-ports 993)
+                         (home-file ".mbsyncrc")
+                         (xdg-config "isyncrc")
+                         %mail-directory
+                         %password-command))
            (deny-write-execute? #t)))
    #:name "mbsync-locked"
    ;; isync's own starts with a lower-case letter
@@ -46,13 +51,11 @@ supports Maildir and IMAP."))
    (list (locked-command
            (name "msmtp")
            (program (file-append msmtp "/bin/msmtp"))
-           (rules (list %dns
-                        (tcp-ports 25 465 587)
-                        %argument-files
-                        ;; For passwordeval decrypting with gpg
-                        %gnupg
-                        (xdg-config "msmtp")
-                        (xdg-state "msmtp")
-                        (home-file ".msmtprc")))
-           (temporary-directory? #t)
+           (rules (cons* %dns
+                         (tcp-ports 465)
+                         (home-file ".msmtprc")
+                         (xdg-config "msmtp")
+                         (xdg-state "msmtp")
+                         %temporary-directory
+                         %password-command))
            (deny-write-execute? #t)))))

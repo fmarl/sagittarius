@@ -12,9 +12,7 @@
    (list (locked-command
            (name "pinentry-bemenu")
            (program (file-append pinentry-bemenu "/bin/pinentry-bemenu"))
-           (rules (list %fonts))
-           (wayland 'full)
-           (runtime-directory? #t)
+           (rules (list %fonts %full-wayland %runtime-directory))
            (executes? #f)
            (preserved-environment-variables
             (cons "BEMENU_OPTS" %default-preserved-environment-variables))
