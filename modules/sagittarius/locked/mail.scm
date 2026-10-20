@@ -9,7 +9,7 @@
 (define %password-command
   ;; secret decrypts the password with sops and gpg
   (list %shell
-        (home-program ".local/bin/secret")
+        (home-file ".local/bin/secret" '(read execute))
         (home-file ".config/sops/secrets.yaml")
         %gnupg))
 

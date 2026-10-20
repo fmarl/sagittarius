@@ -12,16 +12,14 @@
    (list (locked-command
            (name "mpv")
            (program (file-append mpv "/bin/mpv"))
-           (rules (list %graphics
-                        %fonts
-                        %wayland
+           (rules (list %gui
                         %pipewire
                         (xdg-config "mpv")
                         (xdg-state "mpv")
                         (xdg-cache "mpv")
                         %argument-files
-                        (when-network-arguments
-                         #:playlists '(".m3u" ".m3u8" ".pls")
+                        (when-arguments
+                         '(urls (extensions ".m3u" ".m3u8" ".pls"))
                          %dns (tcp-ports 80 443))))
            (preserved-environment-variables
             (cons "MPV_*" %default-preserved-environment-variables))
