@@ -21,7 +21,7 @@
                            "claude-code-linux-x64/-/claude-code-linux-x64-"
                            version ".tgz"))
        (sha256
-        (base32 "1q43lvcxi0vdcf0i57nbg8w9x6j60jpcbc6m9nzyankcbq9dg1s8"))))
+        (base32 "012qssgcawpvr1ada648vj9mxm3zhq0w27bv3ckpfam1nlb58ig1"))))
     (build-system copy-build-system)
     (arguments
      (list
