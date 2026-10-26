@@ -8,11 +8,11 @@
   #:use-module (gnu services configuration)
   #:use-module (ice-9 match)
   #:use-module (srfi srfi-1)
-  #:export (home-nucleotide-configuration
+  #:export (home-nucleotide-service-type
+            home-nucleotide-configuration
             home-nucleotide-configuration?
             home-nucleotide-configuration-settings
             home-nucleotide-configuration-entries
-            home-nucleotide-service-type
             nucleotide-autostart
             nucleotide-bind
             nucleotide-spawn))
@@ -24,82 +24,79 @@
   `(autostart ,program ,@arguments))
 
 (define (nucleotide-bind key action)
-  "Bind KEY to ACTION, Lisp code as a string or an action returned by
-nucleotide-spawn."
+  "Bind KEY, like \"Mod+Shift+C\", to ACTION, a nucleotide command like
+(close-window) as an S-expression."
+  (when (string? action)
+    (error "nucleotide action is a string, not an S-expression:" action))
   `(bind ,key ,action))
 
 (define-configuration/no-serialization home-nucleotide-configuration
+  (defaults?
+   (boolean #t)
+   "Whether to bind the default keys of nucleotide.")
   (settings
    (list '())
-   "Lisp code, as strings or file-like objects, at the top of
-@file{init.lisp}.")
+   "Lisp forms after the defaults in @file{init.lisp}: S-expressions, strings
+of Lisp code, or file-like objects to load.")
   (entries
    (list '())
    "Programs to start and key bindings, as returned by
 @code{nucleotide-autostart} and @code{nucleotide-bind}."))
 
-(define (lisp-string value)
-  (match value
-    ((? string?)
-     (list (object->string value)))
+;; Common Lisp strings know only these two escapes.
+(define (lisp-string text)
+  (string-append "\""
+                 (string-concatenate
+                  (map (lambda (char)
+                         (if (memv char '(#\\ #\"))
+                             (string #\\ char)
+                             (string char)))
+                       (string->list text)))
+                 "\""))
+
+(define (join-lisp sexps)
+  (match sexps
+    (() '())
+    ((first . rest)
+     (append (sexp->lisp first)
+             (append-map (lambda (sexp)
+                           (cons " " (sexp->lisp sexp)))
+                         rest)))))
+
+(define (sexp->lisp sexp)
+  (match sexp
+    (#t '("t"))
+    ((or #f ()) '("nil"))
+    ((? keyword?)
+     (list (string-append ":" (symbol->string (keyword->symbol sexp)))))
+    ((? symbol?) (list (symbol->string sexp)))
+    ((? string?) (list (lisp-string sexp)))
+    ((? char?) (list (object->string sexp)))
+    ((? number?) (list (number->string sexp)))
+    ((? file-like?) (list "\"" sexp "\""))
+    ((? vector?) `("#(" ,@(join-lisp (vector->list sexp)) ")"))
+    (('quote form) (cons "'" (sexp->lisp form)))
+    ((? list?) `("(" ,@(join-lisp sexp) ")"))
+    ((head . tail)
+     `("(" ,@(sexp->lisp head) " . " ,@(sexp->lisp tail) ")"))))
+
+(define (form->lisp form)
+  (match form
+    (((? symbol? head) first second third . rest)
+     `("(" ,@(join-lisp (list head first))
+       ,@(append-map (lambda (sexp)
+                       (cons "\n  " (sexp->lisp sexp)))
+                     (cons* second third rest))
+       ")\n"))
     (_
-     (list "\"" value "\""))))
+     (append (sexp->lisp form) '("\n")))))
 
-(define (lisp-strings values)
-  (append-map (lambda (value)
-                (cons " " (lisp-string value)))
-              values))
+(define (setting->form setting)
+  (if (file-like? setting)
+      `(load ,setting)
+      setting))
 
-(define %modifiers
-  '(("Shift" . ":shift")
-    ("Ctrl" . ":ctrl")
-    ("Alt" . ":alt")
-    ("Mod" . ":super")
-    ("Super" . ":super")))
-
-(define %keysyms
-  '(("Return" . ":return")
-    ("Print" . ":print")
-    ("Delete" . ":delete")
-    ("XF86MonBrightnessUp" . "#x1008ff02")
-    ("XF86MonBrightnessDown" . "#x1008ff03")
-    ("XF86AudioLowerVolume" . "#x1008ff11")
-    ("XF86AudioMute" . "#x1008ff12")
-    ("XF86AudioRaiseVolume" . "#x1008ff13")
-    ("XF86AudioMicMute" . "#x1008ffb2")))
-
-(define (keysym key)
-  (cond
-   ((= (string-length key) 1)
-    (string-append "#\\" (string-downcase key)))
-   ((assoc-ref %keysyms key))
-   (else
-    (error "unknown nucleotide key" key))))
-
-(define (modifier name)
-  (or (assoc-ref %modifiers name)
-      (error "unknown nucleotide modifier" name)))
-
-(define (action->lisp action)
-  (match action
-    ((? string?)
-     (list action))
-    (('spawn . command)
-     `("(spawn (list" ,@(lisp-strings command) "))"))))
-
-(define (bind->lisp key action)
-  (match (reverse (string-split key #\+))
-    ((key . modifiers)
-     `("\n  (("
-       ,(string-join (map modifier (reverse modifiers)) " ")
-       ") " ,(keysym key) " "
-       ,@(action->lisp action)
-       ")"))))
-
-(define (autostart->lisp command)
-  `("\n    (" ,@(cdr (lisp-strings command)) ")"))
-
-(define (nucleotide-config-file config)
+(define (nucleotide-forms config)
   (define entries
     (home-nucleotide-configuration-entries config))
 
@@ -114,16 +111,23 @@ nucleotide-spawn."
                (unless (memq tag '(autostart bind))
                  (error "unknown nucleotide entry:" tag))))
             entries)
+  (append (if (home-nucleotide-configuration-defaults? config)
+              '((use-defaults))
+              '())
+          (map setting->form (home-nucleotide-configuration-settings config))
+          `((setf *autostart-programs* ',(tagged 'autostart)))
+          (map (match-lambda
+                 ((key action)
+                  `(bind ,key ,action)))
+               (tagged 'bind))))
+
+(define (nucleotide-config-file config)
   (apply mixed-text-file "init.lisp"
-         (append (home-nucleotide-configuration-settings config)
-                 '("\n(defparameter *autostart-programs*\n  '(")
-                 (append-map autostart->lisp (tagged 'autostart))
-                 '("))\n\n(define-keybinds (wm)")
-                 (append-map (match-lambda
-                               ((key action)
-                                (bind->lisp key action)))
-                             (tagged 'bind))
-                 '(")\n"))))
+         (append-map (lambda (form)
+                       (if (string? form)
+                           (list form "\n")
+                           (form->lisp form)))
+                     (nucleotide-forms config))))
 
 (define home-nucleotide-service-type
   (service-type

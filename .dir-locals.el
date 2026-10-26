@@ -11,6 +11,15 @@
   .
   ((indent-tabs-mode . nil)
 
+   (eval . (with-eval-after-load 'geiser-guile
+             (let ((root (expand-file-name
+                          "modules/"
+                          (locate-dominating-file default-directory
+                                                  ".dir-locals.el"))))
+               (unless (member root geiser-guile-load-path)
+                 (setq-local geiser-guile-load-path
+                             (cons root geiser-guile-load-path))))))
+
    ;; Guile and Guix forms used here.
    (eval . (put 'call-with-port 'scheme-indent-function 1))
    (eval . (put 'guard 'scheme-indent-function 1))
@@ -47,4 +56,5 @@
    (eval . (put 'shepherd-service 'scheme-indent-function 0))
    (eval . (put 'static-networking 'scheme-indent-function 0))
    (eval . (put 'user-account 'scheme-indent-function 0))
-   (eval . (put 'user-group 'scheme-indent-function 0)))))
+   (eval . (put 'user-group 'scheme-indent-function 0))
+   (eval . (put 'home-nucleotide-configuration 'scheme-indent-function 0)))))
