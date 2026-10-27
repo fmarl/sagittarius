@@ -5,7 +5,6 @@
   #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
-  #:use-module (gnu packages xdisorg)
   #:use-module (guix build-system asdf)
   #:use-module (guix gexp)
   #:use-module (guix git-download)
@@ -13,8 +12,8 @@
   #:use-module ((guix licenses) #:prefix license:))
 
 (define-public nucleotide
-  (let ((commit "6a985a18ddc66af779b7d30f9c73e723d2a033e6")
-        (revision "2"))
+  (let ((commit "fda5f32bff55029d8dd529123038d173d0c13529")
+        (revision "3"))
     (package
       (name "nucleotide")
       (version (git-version "0.1.0" revision commit))
@@ -26,18 +25,12 @@
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1n754zrwrqnj7hmjf45fxj6mrywsl7bs3if5c494z6f7j7xin2p3"))))
+          (base32 "1kf7ydg68xsgpnpmc8c5c73xhpvx5bbk2ihbyaw0ck9j770rcv54"))))
       (build-system asdf-build-system/sbcl)
       (arguments
        (list
         #:phases
         #~(modify-phases %standard-phases
-            (add-after 'unpack 'set-libxkbcommon
-              (lambda* (#:key inputs #:allow-other-keys)
-                (substitute* "src/keys.lisp"
-                  (("\"libxkbcommon.so.0\"")
-                   (format #f "~s"
-                           (search-input-file inputs "lib/libxkbcommon.so.0"))))))
             (add-after 'create-asdf-configuration 'build-program
               (lambda* (#:key outputs #:allow-other-keys)
                 (build-program (string-append #$output "/bin/nucleotide")
@@ -50,7 +43,7 @@
                                #:compress? #t
                                #:entry-program '((nucleotide::main))))))))
       (native-inputs (list sbcl sbcl-fiveam))
-      (inputs (list libxkbcommon sbcl-slynk))
+      (inputs (list sbcl-slynk))
       (synopsis "Hackable Wayland window manager")
       (description
        "Nucleotide is a hackable Wayland window manager for the river compositor,
