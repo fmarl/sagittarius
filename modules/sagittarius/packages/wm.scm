@@ -5,6 +5,7 @@
   #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages xdisorg)
   #:use-module (guix build-system asdf)
   #:use-module (guix gexp)
   #:use-module (guix git-download)
@@ -12,8 +13,8 @@
   #:use-module ((guix licenses) #:prefix license:))
 
 (define-public nucleotide
-  (let ((commit "3e966a42c641e844f6dfaf28cbc07fad83f2ec9c")
-        (revision "4"))
+  (let ((commit "5378ae490cc03d58bf17a519d982309973907669")
+        (revision "5"))
     (package
       (name "nucleotide")
       (version (git-version "0.1.0" revision commit))
@@ -25,7 +26,7 @@
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1gxg6yhr2g1r1iy5v396k4zxwc23nz4v9d54vf0wpni05prz2vx8"))))
+          (base32 "03bmcaxi9jp1a0wh4s71jyan697m7k5lrfkzsd24g6hiwb4f3sk3"))))
       (build-system asdf-build-system/sbcl)
       (arguments
        (list
@@ -42,7 +43,7 @@
                                                               "sbcl-slynk"))
                                #:compress? #t
                                #:entry-program '((nucleotide::main))))))))
-      (native-inputs (list sbcl sbcl-fiveam))
+      (native-inputs (list libxkbcommon sbcl sbcl-fiveam))
       (inputs (list sbcl-slynk))
       (synopsis "Hackable Wayland window manager")
       (description
