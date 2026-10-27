@@ -12,8 +12,8 @@
   #:use-module ((guix licenses) #:prefix license:))
 
 (define-public nucleotide
-  (let ((commit "fda5f32bff55029d8dd529123038d173d0c13529")
-        (revision "3"))
+  (let ((commit "3e966a42c641e844f6dfaf28cbc07fad83f2ec9c")
+        (revision "4"))
     (package
       (name "nucleotide")
       (version (git-version "0.1.0" revision commit))
@@ -25,7 +25,7 @@
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1kf7ydg68xsgpnpmc8c5c73xhpvx5bbk2ihbyaw0ck9j770rcv54"))))
+          (base32 "1gxg6yhr2g1r1iy5v396k4zxwc23nz4v9d54vf0wpni05prz2vx8"))))
       (build-system asdf-build-system/sbcl)
       (arguments
        (list
