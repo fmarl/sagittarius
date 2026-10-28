@@ -15,6 +15,7 @@
             home-nucleotide-configuration-entries
             nucleotide-autostart
             nucleotide-bind
+            nucleotide-rule
             nucleotide-spawn))
 
 (define (nucleotide-spawn program . arguments)
@@ -30,6 +31,24 @@
     (error "nucleotide action is a string, not an S-expression:" action))
   `(bind ,key ,action))
 
+(define (plist-keys plist)
+  (match plist
+    (() '())
+    ((key _ . rest) (cons key (plist-keys rest)))))
+
+(define (check-plist plist keys what)
+  (unless (and (even? (length plist))
+               (every (lambda (key) (memq key keys)) (plist-keys plist)))
+    (error (string-append "nucleotide rule " what " takes only these keys:")
+           keys plist)))
+
+(define (nucleotide-rule patterns . actions)
+  "Apply ACTIONS, like #:float #t, to new windows whose properties match
+PATTERNS, a list like (#:app-id \"mpv\") of strings or Lisp predicates."
+  (check-plist patterns '(#:app-id #:title) "patterns")
+  (check-plist actions '(#:float #:workspace #:output #:fullscreen) "actions")
+  `(rule ,patterns ,@actions))
+
 (define-configuration/no-serialization home-nucleotide-configuration
   (defaults?
    (boolean #t)
@@ -40,8 +59,9 @@
 of Lisp code, or file-like objects to load.")
   (entries
    (list '())
-   "Programs to start and key bindings, as returned by
-@code{nucleotide-autostart} and @code{nucleotide-bind}."))
+   "Programs to start, key bindings and window rules, as returned by
+@code{nucleotide-autostart}, @code{nucleotide-bind} and
+@code{nucleotide-rule}."))
 
 ;; Common Lisp strings know only these two escapes.
 (define (lisp-string text)
@@ -80,13 +100,22 @@ of Lisp code, or file-like objects to load.")
     ((head . tail)
      `("(" ,@(sexp->lisp head) " . " ,@(sexp->lisp tail) ")"))))
 
+(define (lines sexps)
+  "SEXPS one per line, keywords on the line of their value."
+  (match sexps
+    (() '())
+    (((? keyword? key) value . rest)
+     (cons (list key value) (lines rest)))
+    ((sexp . rest)
+     (cons (list sexp) (lines rest)))))
+
 (define (form->lisp form)
   (match form
     (((? symbol? head) first second third . rest)
      `("(" ,@(join-lisp (list head first))
-       ,@(append-map (lambda (sexp)
-                       (cons "\n  " (sexp->lisp sexp)))
-                     (cons* second third rest))
+       ,@(append-map (lambda (line)
+                       (cons "\n  " (join-lisp line)))
+                     (lines (cons* second third rest)))
        ")\n"))
     (_
      (append (sexp->lisp form) '("\n")))))
@@ -108,7 +137,7 @@ of Lisp code, or file-like objects to load.")
 
   (for-each (match-lambda
               ((tag . _)
-               (unless (memq tag '(autostart bind))
+               (unless (memq tag '(autostart bind rule))
                  (error "unknown nucleotide entry:" tag))))
             entries)
   (append (if (home-nucleotide-configuration-defaults? config)
@@ -119,7 +148,11 @@ of Lisp code, or file-like objects to load.")
           (map (match-lambda
                  ((key action)
                   `(bind ,key ,action)))
-               (tagged 'bind))))
+               (tagged 'bind))
+          (map (match-lambda
+                 ((patterns . actions)
+                  `(rule ,patterns ,@actions)))
+               (tagged 'rule))))
 
 (define (nucleotide-config-file config)
   (apply mixed-text-file "init.lisp"
