@@ -21,7 +21,7 @@
 (define-public solidcraft
   (package
     (name "solidcraft")
-    (version "0.20.0")
+    (version "0.26.0")
     (source
      (origin
        (method git-fetch)
@@ -30,7 +30,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0siakg52kda559p8cyijg6ymh7g7v36icdb56h4504dlxfar22z6"))))
+        (base32 "0gsz7iy98vnbiwdk3qnxkm9x4a5s0qz0av2pln8fbvkyyjmidxji"))))
     (build-system cargo-build-system)
     (arguments
      (list

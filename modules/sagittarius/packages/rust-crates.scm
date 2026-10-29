@@ -247,29 +247,57 @@
   (crate-source "cadmpeg-codec-freecad" "0.6.1"
                 "04l8h0x9jripalr54810prdck5ncmmx3qys5m1cwyj95bhk5flia"))
 
+(define rust-cadmpeg-codec-freecad-0.6.3
+  (crate-source "cadmpeg-codec-freecad" "0.6.3"
+                "0dsddg0rfavfp9d1z5430m357rdzrsl012w3h37b7js82yk8yjiw"))
+
 (define rust-cadmpeg-codec-rhino-0.6.1
   (crate-source "cadmpeg-codec-rhino" "0.6.1"
                 "01zd5g3z4prf1cyyqwhb78iy7xvijw13612wqzs5lzhwp4pv923x"))
+
+(define rust-cadmpeg-codec-rhino-0.6.3
+  (crate-source "cadmpeg-codec-rhino" "0.6.3"
+                "1gy6agplz4mc83k335a20ffxgfn9qcnf0bb1ivl6j7ac1m243byp"))
 
 (define rust-cadmpeg-codec-step-0.6.1
   (crate-source "cadmpeg-codec-step" "0.6.1"
                 "0741lll12qhjps8dhnk2751y6jpm1aihqdpvfwzni6hjihjm4fp8"))
 
+(define rust-cadmpeg-codec-step-0.6.3
+  (crate-source "cadmpeg-codec-step" "0.6.3"
+                "0nfmkf3d8ah17y8zv0f52qra7li9bkpvinifkzsk2szjgk8vdq9m"))
+
 (define rust-cadmpeg-container-0.6.1
   (crate-source "cadmpeg-container" "0.6.1"
                 "0vk80yi8phk8bw5ykx910c5cfbflvw2yavcha9gr0phmv6650461"))
+
+(define rust-cadmpeg-container-0.6.3
+  (crate-source "cadmpeg-container" "0.6.3"
+                "1ga5c2dg28jd1rdy213rw4rrab6dhlnjf83qj6s80x5c93pvrdss"))
 
 (define rust-cadmpeg-core-0.6.1
   (crate-source "cadmpeg-core" "0.6.1"
                 "1ypnb5km5zdj7r2cdyi2qv6khwjr8h1klfavv997qkm7a5z19c91"))
 
+(define rust-cadmpeg-core-0.6.3
+  (crate-source "cadmpeg-core" "0.6.3"
+                "0gxfpsq5qpmkw626vgvkmlmcbch6qyhm6n8zpc22b0r10njbfsz8"))
+
 (define rust-cadmpeg-ir-0.6.1
   (crate-source "cadmpeg-ir" "0.6.1"
                 "1g3x5qpxqcx9k8024m5aka2w4lz2sb2h5f1v6mzdj4zh37q1kzvi"))
 
+(define rust-cadmpeg-ir-0.6.3
+  (crate-source "cadmpeg-ir" "0.6.3"
+                "0wiw69gnn19axasgrf3qspqjg20gj2hhzcbvznlhgr3rqnla2w5m"))
+
 (define rust-cadmpeg-registry-0.6.1
   (crate-source "cadmpeg-registry" "0.6.1"
                 "0p9wxv618zpri22p0wl9qq24p5lrwrhzhi49x9xp09j9d4d6y136"))
+
+(define rust-cadmpeg-registry-0.6.3
+  (crate-source "cadmpeg-registry" "0.6.3"
+                "0xqkihgs85h7ig6fc27d5p9yp0dmzy7i248q9xl0pjlvk9327gmj"))
 
 (define rust-calloop-0.13.0
   (crate-source "calloop" "0.13.0"
@@ -394,6 +422,10 @@
 (define rust-crc32fast-1.5.2
   (crate-source "crc32fast" "1.5.2"
                 "0y0f955n2hr5a8rd9nw9sr23nhjc42ddx3bjc47dnlmqssgpk9q1"))
+
+(define rust-crossbeam-channel-0.5.17
+  (crate-source "crossbeam-channel" "0.5.17"
+                "1wcy7y77hw7z5m140114iqxb90gsq062djd9zpkndisvgcrcrc4q"))
 
 (define rust-crossbeam-deque-0.8.8
   (crate-source "crossbeam-deque" "0.8.8"
@@ -867,6 +899,10 @@
   (crate-source "katexit" "0.1.5"
                 "1ns7wl7jgicjbsnk9287dnfvqihyk455vjmxxjjq93wkwxy0pyyc"))
 
+(define rust-keyboard-types-0.8.3
+  (crate-source "keyboard-types" "0.8.3"
+                "13dj6jsk4rr4kqghlxyr3ql7ajfrg65awc1h4c21mris80xqbghg"))
+
 (define rust-keyring-3.6.3
   (crate-source "keyring" "3.6.3"
                 "072mzc4rk2qffdlc8c5s9h38c6fifyr9xxmsix599ra4y2pw7g7f"))
@@ -963,6 +999,10 @@
 (define rust-moxcms-0.8.1
   (crate-source "moxcms" "0.8.1"
                 "0jz4fd5f7pdn1rngqc96lxriqjkym1lswdhdbjr037s8p9ac31dv"))
+
+(define rust-muda-0.21.2
+  (crate-source "muda" "0.21.2"
+                "00xwp28wx0v9i8brdr0kwjdkc6chd5znphy5g4lfc5l92yffhh23"))
 
 (define rust-multiversion-no-op-1.0.0
   (crate-source "multiversion_no_op" "1.0.0"
@@ -1460,6 +1500,10 @@
   (crate-source "rustversion" "1.0.23"
                 "07z2a843fs80fawwflj9jwn49k9b0bd0dhhbvy0ar69vaxd72m6g"))
 
+(define rust-ruzstd-0.9.1
+  (crate-source "ruzstd" "0.9.1"
+                "1d8v8a4gfdi95j6vn6xik9s9i7kq9mz6d58bj8jvyhlz0d5cxr39"))
+
 (define rust-same-file-1.0.6
   (crate-source "same-file" "1.0.6"
                 "00h5j1w87dmhnvbv9l8bic3y7xxsnjmssvifw2ayvgx9mb1ivz4k"))
@@ -1760,6 +1804,10 @@
   (crate-source "ttf-parser" "0.25.1"
                 "0cbgqglcwwjg3hirwq6xlza54w04mb5x02kf7zx4hrw50xmr1pyj"))
 
+(define rust-twox-hash-2.1.5
+  (crate-source "twox-hash" "2.1.5"
+                "1hj1g6nz5dxv00pxdh7mwh2mx7m259k111wc8rns0hm3rsrh3a46"))
+
 (define rust-type-map-0.5.1
   (crate-source "type-map" "0.5.1"
                 "143v32wwgpymxfy4y8s694vyq0wdi7li4s5dmms5w59nj2yxnc6b"))
@@ -1767,6 +1815,10 @@
 (define rust-typed-path-0.12.3
   (crate-source "typed-path" "0.12.3"
                 "03k051dafrnyg3lbm4c85zg0mpfhbn6l9aq4ryq8yyy8h2dzha4f"))
+
+(define rust-typed-path-0.13.0
+  (crate-source "typed-path" "0.13.0"
+                "07jy8i3k23d02g9g30xyr5f0mbxijjb38brdcqlg1l4c7n19is4w"))
 
 (define rust-typeid-1.0.3
   (crate-source "typeid" "1.0.3"
@@ -1783,6 +1835,10 @@
 (define rust-unarray-0.1.4
   (crate-source "unarray" "0.1.4"
                 "154smf048k84prsdgh09nkm2n0w0336v84jd4zikyn6v6jrqbspa"))
+
+(define rust-unicode-bidi-0.3.18
+  (crate-source "unicode-bidi" "0.3.18"
+                "1xcxwbsqa24b8vfchhzyyzgj0l6bn51ib5v8j6krha0m77dva72w"))
 
 (define rust-unicode-general-category-1.1.0
   (crate-source "unicode-general-category" "1.1.0"
@@ -2261,6 +2317,10 @@
   (crate-source "zip" "9.0.4"
                 "08nwkmhl2ayrnw7vk8al3fxx88vbx0a2hwnjhfgz8kd58x5i2m59"))
 
+(define rust-zip-9.1.3
+  (crate-source "zip" "9.1.3"
+                "1jvcwaz17n4nywi03bggyw5pdcqcbr2m02iiqacvjd1a2jfv6mhi"))
+
 (define rust-zlib-rs-0.6.8
   (crate-source "zlib-rs" "0.6.8"
                 "04j158293bx73kv5pj1i89ai411q7fxc9zwk3wkpqgb9gj7fas5j"))
@@ -2387,13 +2447,13 @@
                                   rust-byteorder-1.5.0
                                   rust-byteorder-lite-0.1.0
                                   rust-bytes-1.12.1
-                                  rust-cadmpeg-codec-freecad-0.6.1
-                                  rust-cadmpeg-codec-rhino-0.6.1
-                                  rust-cadmpeg-codec-step-0.6.1
-                                  rust-cadmpeg-container-0.6.1
-                                  rust-cadmpeg-core-0.6.1
-                                  rust-cadmpeg-ir-0.6.1
-                                  rust-cadmpeg-registry-0.6.1
+                                  rust-cadmpeg-codec-freecad-0.6.3
+                                  rust-cadmpeg-codec-rhino-0.6.3
+                                  rust-cadmpeg-codec-step-0.6.3
+                                  rust-cadmpeg-container-0.6.3
+                                  rust-cadmpeg-core-0.6.3
+                                  rust-cadmpeg-ir-0.6.3
+                                  rust-cadmpeg-registry-0.6.3
                                   rust-calloop-0.13.0
                                   rust-calloop-0.14.5
                                   rust-calloop-wayland-source-0.3.0
@@ -2425,6 +2485,7 @@
                                   rust-cpufeatures-0.2.17
                                   rust-cpufeatures-0.3.1
                                   rust-crc32fast-1.5.2
+                                  rust-crossbeam-channel-0.5.17
                                   rust-crossbeam-deque-0.8.8
                                   rust-crossbeam-epoch-0.9.21
                                   rust-crossbeam-utils-0.8.23
@@ -2543,6 +2604,7 @@
                                   rust-jobserver-0.1.35
                                   rust-js-sys-0.3.106
                                   rust-katexit-0.1.5
+                                  rust-keyboard-types-0.8.3
                                   rust-keyring-3.6.3
                                   rust-khronos-egl-6.0.0
                                   rust-khronos-api-3.1.0
@@ -2567,6 +2629,7 @@
                                   rust-miniz-oxide-0.8.9
                                   rust-miniz-oxide-0.9.1
                                   rust-moxcms-0.8.1
+                                  rust-muda-0.21.2
                                   rust-multiversion-no-op-1.0.0
                                   rust-naga-30.0.1
                                   rust-naga-types-30.0.1
@@ -2691,6 +2754,7 @@
                                   rust-rustls-platform-verifier-android-0.2.0
                                   rust-rustls-webpki-0.103.15
                                   rust-rustversion-1.0.23
+                                  rust-ruzstd-0.9.1
                                   rust-same-file-1.0.6
                                   rust-schannel-0.1.29
                                   rust-schemars-1.2.3
@@ -2766,12 +2830,14 @@
                                   rust-truck-polymesh-0.6.0
                                   rust-truck-topology-0.6.0
                                   rust-ttf-parser-0.25.1
+                                  rust-twox-hash-2.1.5
                                   rust-type-map-0.5.1
-                                  rust-typed-path-0.12.3
+                                  rust-typed-path-0.13.0
                                   rust-typeid-1.0.3
                                   rust-typenum-1.20.1
                                   rust-uds-windows-1.2.1
                                   rust-unarray-0.1.4
+                                  rust-unicode-bidi-0.3.18
                                   rust-unicode-general-category-1.1.0
                                   rust-unicode-ident-1.0.26
                                   rust-unicode-segmentation-1.13.3
@@ -2889,16 +2955,10 @@
                                   rust-zerotrie-0.2.5
                                   rust-zerovec-0.11.8
                                   rust-zerovec-derive-0.11.6
-                                  rust-zip-8.6.0
-                                  rust-zip-9.0.4
+                                  rust-zip-9.1.3
                                   rust-zlib-rs-0.6.8
                                   rust-zmij-1.0.23
                                   rust-zopfli-0.8.3
-                                  rust-zstd-0.13.3
-                                  rust-zstd-0.14.2
-                                  rust-zstd-safe-7.3.0
-                                  rust-zstd-safe-8.1.0
-                                  rust-zstd-sys-2.1.1+zstd.1.5.7
                                   rust-zune-core-0.5.3
                                   rust-zune-jpeg-0.5.15
                                   rust-zvariant-4.2.0
