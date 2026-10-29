@@ -14,7 +14,7 @@
 (define-public python-virtme-ng
   (package
     (name "python-virtme-ng")
-    (version "1.41")
+    (version "1.42")
     (source
      (origin
        (method git-fetch)
@@ -23,7 +23,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0dpim9675p15ja993gj1xh7dq79dgh1w9lp0ym2yryfd7wsbc7zx"))))
+        (base32 "1sfhg11wsrwm92zkixx5vdn6x6fmxl90vyv03kynxqf2a3kigjqr"))))
     (build-system pyproject-build-system)
     (arguments
      (list
