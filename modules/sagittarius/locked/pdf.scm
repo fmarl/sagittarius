@@ -19,5 +19,5 @@
                         (xdg-config "gtk-3.0")
                         %argument-files))
            (environment '(("NO_AT_BRIDGE" . "1")))
-           (executes? #f)
+           (executes-others? #f)
            (deny-write-execute? #t)))))

@@ -12,8 +12,8 @@
    (list (locked-command
            (name "pinentry-bemenu")
            (program (file-append pinentry-bemenu "/bin/pinentry-bemenu"))
-           (rules (list %fonts %full-wayland %runtime-directory))
-           (executes? #f)
+           (rules (list %fonts %privileged-wayland %runtime-directory))
+           (executes-others? #f)
            (preserved-environment-variables
             (cons "BEMENU_OPTS" %default-preserved-environment-variables))
            (deny-write-execute? #t)))))

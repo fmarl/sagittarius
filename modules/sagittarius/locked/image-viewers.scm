@@ -17,5 +17,5 @@
                         %wayland
                         (xdg-config "imv")
                         %argument-files))
-           (executes? #f)
+           (executes-others? #f)
            (deny-write-execute? #t)))))

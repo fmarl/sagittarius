@@ -12,8 +12,8 @@
    (list (locked-command
            (name "swaybg")
            (program (file-append swaybg "/bin/swaybg"))
-           (rules (list %full-wayland %shm %argument-files))
-           (executes? #f)
+           (rules (list %privileged-wayland %shm %argument-files))
+           (executes-others? #f)
            (deny-write-execute? #t)))))
 
 (define-public mako-locked
@@ -23,9 +23,9 @@
            (name "mako")
            (program (file-append mako "/bin/mako"))
            (rules (list %fonts
-                        %full-wayland
+                        %privileged-wayland
                         %shm
                         (xdg-config "mako")
                         (dbus "--own=org.freedesktop.Notifications")))
-           (executes? #f)
+           (executes-others? #f)
            (deny-write-execute? #t)))))
