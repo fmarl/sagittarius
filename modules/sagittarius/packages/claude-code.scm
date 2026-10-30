@@ -53,8 +53,8 @@ exec ~a/ld-linux-x86-64.so.2 --library-path ~a \\
     (inputs (list bash-minimal glibc))
     (supported-systems '("x86_64-linux"))
     (home-page "https://github.com/anthropics/claude-code")
-    (synopsis "Agentic coding tool for the terminal")
-    (description "Claude Code is Anthropic's agentic coding assistant.  It
+    (synopsis "Coding assistant for the terminal")
+    (description "Claude Code is Anthropic's coding assistant.  It
 reads and edits code and runs commands in the terminal.")
     (license ((@@ (guix licenses) license)
               "Nonfree" "file://LICENSE.md"

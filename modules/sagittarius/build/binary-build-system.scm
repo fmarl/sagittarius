@@ -17,17 +17,9 @@
 ;; Copied and modified from the nonguix project.
 
 (define* (patchelf #:key inputs outputs patchelf-plan #:allow-other-keys)
-  "Set the interpreter and the RPATH of files as per the PATCHELF-PLAN.
-
-The PATCHELF-PLAN elements are lists of:
-
-- The file to patch.
-- The inputs (as strings) to include in the rpath, e.g. \"mesa\".  An input
-  can also be a list of its name and the sub-directory to use instead of
-  \"/lib\".
-
-Both executables and dynamic libraries are accepted.
-The inputs are optional when the file is an executable."
+  "Set the interpreter and the RPATH of files as per PATCHELF-PLAN, a list of
+(FILE INPUTS).  INPUTS are names like \"mesa\", or lists of a name and the
+directory to use instead of \"/lib\".  Executables may leave them out."
   (define* (rpath-entry name #:optional (sub-directory "/lib"))
     (match (or (assoc-ref outputs name) (assoc-ref inputs name))
       (#f (error (format #f "`~a' not found among the inputs nor the outputs."
@@ -36,8 +28,8 @@ The inputs are optional when the file is an executable."
 
   (define (patch-binary interpreter binary runpath)
     (unless (string-contains binary ".so")
-      ;; Use `system*' and not `invoke' since this may raise an error if
-      ;; library does not end with .so.
+      ;; Not `invoke', since this fails on libraries without .so in their
+      ;; name.
       (system* "patchelf" "--set-interpreter" interpreter binary))
     (unless (null? runpath)
       (invoke "patchelf" "--set-rpath"

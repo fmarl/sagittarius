@@ -52,7 +52,6 @@ labeled with their package names."
     ,@%binary-build-system-modules))
 
 (define (chromium-inputs)
-  "Return the inputs needed by Chromium based binaries."
   (add-input-labels
    alsa-lib
    at-spi2-core
