@@ -5,6 +5,8 @@
   #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages shells)
+  #:use-module (gnu packages web)
   #:use-module (gnu packages xdisorg)
   #:use-module (guix build-system asdf)
   #:use-module (guix gexp)
@@ -42,11 +44,15 @@
                              #:compress? #t
                              #:entry-program '((nucleotide::main)))))
           (add-after 'build-program 'install-waybar-module
-            (lambda _
-              (install-file "examples/waybar/which-key"
-                            (string-append #$output "/share/nucleotide/waybar")))))))
+            (lambda* (#:key inputs #:allow-other-keys)
+              (let ((waybar (string-append #$output "/share/nucleotide/waybar")))
+                (install-file "examples/waybar/which-key" waybar)
+                (substitute* (string-append waybar "/which-key")
+                  (("\\$\\{JQ:-jq\\}")
+                   (string-append "${JQ:-"
+                                  (search-input-file inputs "/bin/jq") "}")))))))))
     (native-inputs (list libxkbcommon sbcl sbcl-fiveam))
-    (inputs (list sbcl-slynk))
+    (inputs (list jq sbcl-slynk zsh))
     (synopsis "Hackable Wayland window manager")
     (description
      "Nucleotide is a hackable Wayland window manager for the river compositor,
