@@ -15,7 +15,7 @@
 (define-public nucleotide
   (package
     (name "nucleotide")
-    (version "0.5.0")
+    (version "0.5.1")
     (source
      (origin
        (method git-fetch)
@@ -24,7 +24,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0fdzkil9s9l1mxnyxqazfd6vxbmwx82nfazg99qbnjdii0vv2gk4"))))
+        (base32 "0n7n9n2zsiavqg7k7fwx290c7sir24scrbir3mha79d6xaxalnvn"))))
     (build-system asdf-build-system/sbcl)
     (arguments
      (list
@@ -43,7 +43,7 @@
                              #:entry-program '((nucleotide::main)))))
           (add-after 'build-program 'install-waybar-module
             (lambda _
-              (install-file "examples/waybar/key-chords"
+              (install-file "examples/waybar/which-key"
                             (string-append #$output "/share/nucleotide/waybar")))))))
     (native-inputs (list libxkbcommon sbcl sbcl-fiveam))
     (inputs (list sbcl-slynk))
