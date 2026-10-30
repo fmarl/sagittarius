@@ -24,12 +24,15 @@
 (define (nucleotide-autostart program . arguments)
   `(autostart ,program ,@arguments))
 
-(define (nucleotide-bind key action)
+(define* (nucleotide-bind key action #:key description)
   "Bind KEY, like \"Mod+Shift+C\", to ACTION, a nucleotide command like
-(close-window) as an S-expression."
+(close-window) as an S-expression. DESCRIPTION, like \"close\", is the name
+which-key shows for it."
   (when (string? action)
     (error "nucleotide action is a string, not an S-expression:" action))
-  `(bind ,key ,action))
+  (unless (or (not description) (string? description))
+    (error "nucleotide binding description is not a string:" description))
+  `(bind ,key ,action ,@(if description `(#:description ,description) '())))
 
 (define (plist-keys plist)
   (match plist
@@ -146,8 +149,8 @@ of Lisp code, or file-like objects to load.")
           (map setting->form (home-nucleotide-configuration-settings config))
           `((setf *autostart-programs* ',(tagged 'autostart)))
           (map (match-lambda
-                 ((key action)
-                  `(bind ,key ,action)))
+                 ((key action . options)
+                  `(bind ,key ,action ,@options)))
                (tagged 'bind))
           (map (match-lambda
                  ((patterns . actions)
