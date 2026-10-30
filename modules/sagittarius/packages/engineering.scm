@@ -47,14 +47,14 @@
               (setenv "ZSTD_SYS_USE_PKG_CONFIG" "1")))
           (add-after 'install 'install-desktop-files
             (lambda _
-              (let ((linux "assets/platforms/linux/ai.storyteller.solidcraft")
+              (let ((linux "assets/platforms/linux/io.tangencylabs.solidcraft")
                     (share (string-append #$output "/share")))
                 (install-file (string-append linux ".desktop")
                               (string-append share "/applications"))
                 (mkdir-p (string-append share "/mime/packages"))
                 (copy-file (string-append linux ".mime.xml")
                            (string-append share "/mime/packages/"
-                                          "ai.storyteller.solidcraft.xml"))
+                                          "io.tangencylabs.solidcraft.xml"))
                 (copy-recursively "assets/icons/app/linux/exports/hicolor"
                                   (string-append share "/icons/hicolor")))))
           (add-after 'install 'remove-alias
