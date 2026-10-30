@@ -14,7 +14,8 @@
   (package
     (name "librewolf-vm")
     (version (package-version librewolf))
-    (source #f)
+    (source
+     #f)
     (build-system trivial-build-system)
     (arguments
      (list
