@@ -7,6 +7,7 @@
   #:use-module (gnu services)
   #:use-module (gnu services configuration)
   #:use-module (ice-9 match)
+  #:use-module (sagittarius packages wm)
   #:use-module (srfi srfi-1)
   #:export (home-nucleotide-service-type
             home-nucleotide-configuration
@@ -56,6 +57,9 @@ PATTERNS, a list like (#:app-id \"mpv\") of strings or Lisp predicates."
   (defaults?
    (boolean #t)
    "Whether to bind the default keys of nucleotide.")
+  (monitor?
+   (boolean #t)
+   "Whether to start nucleotide-monitor.")
   (settings
    (list '())
    "Lisp forms after the defaults in @file{init.lisp}: S-expressions, strings
@@ -128,9 +132,20 @@ of Lisp code, or file-like objects to load.")
       `(load ,setting)
       setting))
 
+(define nucleotide-monitor-autostart
+  `("sh" "-c"
+    "while [ -S \"$NIRI_SOCKET\" ]; do \"$1\" && break; sleep 1; done"
+    "nucleotide-monitor"
+    ,(file-append nucleotide-monitor "/bin/nucleotide-monitor")))
+
 (define (nucleotide-forms config)
   (define entries
     (home-nucleotide-configuration-entries config))
+
+  (define monitor
+    (if (home-nucleotide-configuration-monitor? config)
+        (list nucleotide-monitor-autostart)
+        '()))
 
   (define (tagged tag)
     (filter-map (match-lambda
@@ -147,7 +162,8 @@ of Lisp code, or file-like objects to load.")
               '((use-defaults))
               '())
           (map setting->form (home-nucleotide-configuration-settings config))
-          `((setf *autostart-programs* ',(tagged 'autostart)))
+          `((setf *autostart-programs*
+                  ',(append monitor (tagged 'autostart))))
           (map (match-lambda
                  ((key action . options)
                   `(bind ,key ,action ,@options)))
