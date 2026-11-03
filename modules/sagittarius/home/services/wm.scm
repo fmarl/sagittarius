@@ -60,6 +60,10 @@ PATTERNS, a list like (#:app-id \"mpv\") of strings or Lisp predicates."
   (monitor?
    (boolean #t)
    "Whether to start nucleotide-monitor.")
+  (monitor-arguments
+   (list '())
+   "Command-line arguments of nucleotide-monitor, like @code{(\"--accent\"
+\"#0031a9\")}.")
   (settings
    (list '())
    "Lisp forms after the defaults in @file{init.lisp}: S-expressions, strings
@@ -132,11 +136,12 @@ of Lisp code, or file-like objects to load.")
       `(load ,setting)
       setting))
 
-(define nucleotide-monitor-autostart
+(define (nucleotide-monitor-autostart arguments)
   `("sh" "-c"
-    "while [ -S \"$NIRI_SOCKET\" ]; do \"$1\" && break; sleep 1; done"
+    "while [ -S \"$NIRI_SOCKET\" ]; do \"$@\" && break; sleep 1; done"
     "nucleotide-monitor"
-    ,(file-append nucleotide-monitor "/bin/nucleotide-monitor")))
+    ,(file-append nucleotide-monitor "/bin/nucleotide-monitor")
+    ,@arguments))
 
 (define (nucleotide-forms config)
   (define entries
@@ -144,7 +149,8 @@ of Lisp code, or file-like objects to load.")
 
   (define monitor
     (if (home-nucleotide-configuration-monitor? config)
-        (list nucleotide-monitor-autostart)
+        (list (nucleotide-monitor-autostart
+               (home-nucleotide-configuration-monitor-arguments config)))
         '()))
 
   (define (tagged tag)
