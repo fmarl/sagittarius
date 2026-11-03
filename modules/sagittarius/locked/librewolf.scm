@@ -13,6 +13,7 @@
            (name "librewolf")
            (program (file-append librewolf "/bin/librewolf"))
            (rules (list %gui
+                        %security-keys
                         %shm
                         %pulseaudio
                         %dns
@@ -28,4 +29,4 @@
                               "--talk=org.freedesktop.Notifications")))
            (preserved-environment-variables
             (cons "MOZ_*" %default-preserved-environment-variables))
-           (allowed-syscall-groups '(user-namespaces))))))
+           (allowed-syscall-groups '(user-namespaces uevents))))))

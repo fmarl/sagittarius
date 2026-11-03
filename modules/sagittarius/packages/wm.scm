@@ -5,10 +5,12 @@
   #:use-module (gnu packages lisp)
   #:use-module (gnu packages lisp-check)
   #:use-module (gnu packages lisp-xyz)
+  #:use-module (gnu packages pkg-config)
   #:use-module (gnu packages shells)
   #:use-module (gnu packages web)
   #:use-module (gnu packages xdisorg)
   #:use-module (guix build-system asdf)
+  #:use-module (guix build-system cargo)
   #:use-module (guix gexp)
   #:use-module (guix git-download)
   #:use-module (guix packages)
@@ -59,3 +61,38 @@
 written in Common Lisp.")
     (home-page "https://codeberg.org/fmarl/nucleotide")
     (license license:gpl3+)))
+
+(define-public nucleotide-monitor
+  (let ((commit "3023cc197d9d850967b2245e9111e70f572fcc8a")
+        (revision "0"))
+    (package
+      (name "nucleotide-monitor")
+      (version (git-version "0.1.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/fmarl/nucleotide-utils")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1c8hxwls25c4g3frypw36khx932z12b5r3rl7frldidlydzzij3k"))))
+      (build-system cargo-build-system)
+      (arguments
+       (list
+        #:install-source? #f
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'chdir
+              (lambda _
+                (chdir "nucleotide-monitor"))))))
+      (native-inputs (list pkg-config))
+      (inputs (cons libxkbcommon
+                    (cargo-inputs 'nucleotide-monitor
+                                  #:module '(sagittarius packages rust-crates))))
+      (synopsis "Layer-shell panels for the nucleotide window manager")
+      (description
+       "nucleotide-monitor shows the keys that can follow a prefix and an
+overview of all windows with thumbnails for the nucleotide window manager.")
+      (home-page "https://github.com/fmarl/nucleotide-utils")
+      (license license:gpl3+))))
