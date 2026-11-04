@@ -63,20 +63,20 @@ written in Common Lisp.")
     (license license:gpl3+)))
 
 (define-public nucleotide-monitor
-  (let ((commit "3023cc197d9d850967b2245e9111e70f572fcc8a")
+  (let ((commit "0673336fa45901dbb2439be63cf1d001aad46b9f")
         (revision "0"))
     (package
       (name "nucleotide-monitor")
-      (version (git-version "0.1.0" revision commit))
+      (version (git-version "0.2.0" revision commit))
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
-               (url "https://github.com/fmarl/nucleotide-utils")
+               (url "https://github.com/fmarl/nucleotide-tools")
                (commit commit)))
          (file-name (git-file-name name version))
          (sha256
-          (base32 "1c8hxwls25c4g3frypw36khx932z12b5r3rl7frldidlydzzij3k"))))
+          (base32 "0j5kpwiwdldfml83gmd3apvly28r6add7qa502zwzvlczq89rcd8"))))
       (build-system cargo-build-system)
       (arguments
        (list
@@ -93,6 +93,6 @@ written in Common Lisp.")
       (synopsis "Layer-shell panels for the nucleotide window manager")
       (description
        "nucleotide-monitor shows the keys that can follow a prefix and an
-overview of all windows with thumbnails for the nucleotide window manager.")
-      (home-page "https://github.com/fmarl/nucleotide-utils")
+overview of all windows for the nucleotide window manager.")
+      (home-page "https://github.com/fmarl/nucleotide-tools")
       (license license:gpl3+))))

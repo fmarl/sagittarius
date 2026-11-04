@@ -475,10 +475,6 @@
   (crate-source "crc32fast" "1.5.2"
                 "0y0f955n2hr5a8rd9nw9sr23nhjc42ddx3bjc47dnlmqssgpk9q1"))
 
-(define rust-crc32fast-1.5.3
-  (crate-source "crc32fast" "1.5.3"
-                "0m907hccpnpmr4x87ggcq8n5zd3w1d5sqs07q81dqp848kl0d88b"))
-
 (define rust-crossbeam-channel-0.5.17
   (crate-source "crossbeam-channel" "0.5.17"
                 "1wcy7y77hw7z5m140114iqxb90gsq062djd9zpkndisvgcrcrc4q"))
@@ -2583,14 +2579,11 @@
 (define-cargo-inputs
  lookup-cargo-inputs
  (nucleotide-monitor =>
-                     (list rust-adler2-2.0.1
-                           rust-anstream-1.0.0
+                     (list rust-anstream-1.0.0
                            rust-anstyle-1.0.14
                            rust-anstyle-parse-1.0.0
                            rust-anstyle-query-1.1.5
                            rust-anstyle-wincon-3.0.11
-                           rust-arrayref-0.3.9
-                           rust-arrayvec-0.7.8
                            rust-bitflags-2.13.2
                            rust-bytemuck-1.25.2
                            rust-bytemuck-derive-1.12.1
@@ -2606,14 +2599,11 @@
                            rust-concurrent-queue-2.5.0
                            rust-core-maths-0.1.1
                            rust-cosmic-text-0.19.0
-                           rust-crc32fast-1.5.3
                            rust-crossbeam-utils-0.8.23
                            rust-cursor-icon-1.2.0
                            rust-downcast-rs-1.2.1
                            rust-errno-0.3.14
-                           rust-fdeflate-0.3.7
                            rust-find-msvc-tools-0.1.15
-                           rust-flate2-1.1.10
                            rust-font-types-0.11.3
                            rust-font-types-0.12.7
                            rust-fontconfig-parser-0.5.8
@@ -2630,13 +2620,10 @@
                            rust-log-0.4.35
                            rust-memchr-2.8.3
                            rust-memmap2-0.9.12
-                           rust-miniz-oxide-0.8.9
-                           rust-miniz-oxide-0.9.1
                            rust-once-cell-1.21.4
                            rust-once-cell-polyfill-1.70.2
                            rust-pin-project-lite-0.2.17
                            rust-pkg-config-0.3.34
-                           rust-png-0.18.1
                            rust-polling-3.11.0
                            rust-proc-macro2-1.0.107
                            rust-quick-xml-0.41.0
@@ -2653,22 +2640,18 @@
                            rust-serde-derive-1.0.229
                            rust-serde-json-1.0.154
                            rust-shlex-2.0.1
-                           rust-simd-adler32-0.3.10
                            rust-skrifa-0.40.0
                            rust-skrifa-0.44.0
                            rust-slotmap-1.1.1
                            rust-smallvec-1.16.4
                            rust-smithay-client-toolkit-0.21.1
                            rust-smol-str-0.3.7
-                           rust-strict-num-0.1.1
                            rust-strsim-0.11.1
                            rust-swash-0.2.10
                            rust-syn-3.0.9
                            rust-sys-locale-0.3.2
                            rust-thiserror-2.0.21
                            rust-thiserror-impl-2.0.21
-                           rust-tiny-skia-0.12.0
-                           rust-tiny-skia-path-0.12.0
                            rust-tinyvec-1.13.3
                            rust-tracing-0.1.44
                            rust-tracing-core-0.1.36
@@ -2697,7 +2680,6 @@
                            rust-xkeysym-0.2.1
                            rust-yazi-0.2.2
                            rust-zeno-0.3.3
-                           rust-zlib-rs-0.6.8
                            rust-zmij-1.0.23))
  (solidcraft =>
              (list rust-accesskit-0.24.1
