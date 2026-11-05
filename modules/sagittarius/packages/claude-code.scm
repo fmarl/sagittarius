@@ -5,15 +5,14 @@
   #:use-module (guix gexp)
   #:use-module (guix packages)
   #:use-module (guix download)
-  #:use-module (guix build-system copy)
   #:use-module ((guix licenses) #:prefix license:)
-  #:use-module (gnu packages base)
-  #:use-module (gnu packages bash))
+  #:use-module (gnu packages bash)
+  #:use-module (sagittarius build-system binary))
 
 (define-public claude-code
   (package
     (name "claude-code")
-    (version "2.1.300")
+    (version "2.1.318")
     (source
      (origin
        (method url-fetch)
@@ -21,36 +20,31 @@
                            "claude-code-linux-x64/-/claude-code-linux-x64-"
                            version ".tgz"))
        (sha256
-        (base32 "012qssgcawpvr1ada648vj9mxm3zhq0w27bv3ckpfam1nlb58ig1"))))
-    (build-system copy-build-system)
+        (base32 "0ksmklpyizh0mvf926b8cbqpmxcpxacvsm8rpdcjkggms0xmwk9a"))))
+    (build-system binary-build-system)
     (arguments
      (list
-      ;; Stripping would cut off the appended JavaScript, and the loader is
-      ;; passed explicitly by the wrapper.
+      ;; Stripping would remove the .bun section with the JavaScript.
       #:strip-binaries? #f
+      ;; An RPATH crashes the binary, and the loader finds libc without one.
       #:validate-runpath? #f
+      #:patchelf-plan
+      #~'(("claude"))
       #:install-plan
       #~'(("claude" "libexec/claude-code/"))
       #:phases
       #~(modify-phases %standard-phases
-          (add-after 'install 'install-wrapper
+          (add-after 'install 'wrap
             (lambda _
-              (let ((wrapper (string-append #$output "/bin/claude"))
-                    (libc #$(file-append (this-package-input "glibc") "/lib")))
-                (mkdir-p (dirname wrapper))
-                (call-with-output-file wrapper
-                  (lambda (port)
-                    (format port
-                     "#!~a
-export DISABLE_AUTOUPDATER=1
-exec ~a/ld-linux-x86-64.so.2 --library-path ~a \\
-  ~a/libexec/claude-code/claude \"$@\"~%"
-                     #$(file-append bash-minimal "/bin/sh")
-                     libc
-                     libc
-                     #$output)))
-                (chmod wrapper #o755)))))))
-    (inputs (list bash-minimal glibc))
+              (let ((claude (string-append #$output
+                                           "/libexec/claude-code/claude")))
+                (wrap-program claude
+                  `("DISABLE_AUTOUPDATER" =
+                    ("1")))
+                (mkdir-p (string-append #$output "/bin"))
+                (symlink claude
+                         (string-append #$output "/bin/claude"))))))))
+    (inputs (list bash-minimal))
     (supported-systems '("x86_64-linux"))
     (home-page "https://github.com/anthropics/claude-code")
     (synopsis "Coding assistant for the terminal")
