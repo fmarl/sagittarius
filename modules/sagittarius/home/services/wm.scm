@@ -57,13 +57,16 @@ PATTERNS, a list like (#:app-id \"mpv\") of strings or Lisp predicates."
   (defaults?
    (boolean #t)
    "Whether to bind the default keys of nucleotide.")
-  (monitor?
+  (which-key?
    (boolean #t)
-   "Whether to start nucleotide-monitor.")
-  (monitor-arguments
+   "Whether to start nucleotide-which-key.")
+  (overview?
+   (boolean #t)
+   "Whether to start nucleotide-overview.")
+  (tool-arguments
    (list '())
-   "Command-line arguments of nucleotide-monitor, like @code{(\"--accent\"
-\"#0031a9\")}.")
+   "Command-line arguments of nucleotide-which-key and nucleotide-overview,
+like the colors @code{(\"--accent\" \"#0031a9\")}.")
   (settings
    (list '())
    "Lisp forms after the defaults in @file{init.lisp}: S-expressions, strings
@@ -136,22 +139,25 @@ of Lisp code, or file-like objects to load.")
       `(load ,setting)
       setting))
 
-(define (nucleotide-monitor-autostart arguments)
+(define (tool-autostart program arguments)
   `("sh" "-c"
     "while [ -S \"$NIRI_SOCKET\" ]; do \"$@\" && break; sleep 1; done"
-    "nucleotide-monitor"
-    ,(file-append nucleotide-monitor "/bin/nucleotide-monitor")
+    ,program
+    ,(file-append nucleotide-tools "/bin/" program)
     ,@arguments))
 
 (define (nucleotide-forms config)
   (define entries
     (home-nucleotide-configuration-entries config))
 
-  (define monitor
-    (if (home-nucleotide-configuration-monitor? config)
-        (list (nucleotide-monitor-autostart
-               (home-nucleotide-configuration-monitor-arguments config)))
-        '()))
+  (define tools
+    (let ((arguments (home-nucleotide-configuration-tool-arguments config)))
+      (append (if (home-nucleotide-configuration-which-key? config)
+                  (list (tool-autostart "nucleotide-which-key" arguments))
+                  '())
+              (if (home-nucleotide-configuration-overview? config)
+                  (list (tool-autostart "nucleotide-overview" arguments))
+                  '()))))
 
   (define (tagged tag)
     (filter-map (match-lambda
@@ -169,7 +175,7 @@ of Lisp code, or file-like objects to load.")
               '())
           (map setting->form (home-nucleotide-configuration-settings config))
           `((setf *autostart-programs*
-                  ',(append monitor (tagged 'autostart))))
+                  ',(append tools (tagged 'autostart))))
           (map (match-lambda
                  ((key action . options)
                   `(bind ,key ,action ,@options)))

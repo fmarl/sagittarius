@@ -62,37 +62,32 @@ written in Common Lisp.")
     (home-page "https://codeberg.org/fmarl/nucleotide")
     (license license:gpl3+)))
 
-(define-public nucleotide-monitor
-  (let ((commit "0673336fa45901dbb2439be63cf1d001aad46b9f")
-        (revision "0"))
-    (package
-      (name "nucleotide-monitor")
-      (version (git-version "0.2.0" revision commit))
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://github.com/fmarl/nucleotide-tools")
-               (commit commit)))
-         (file-name (git-file-name name version))
-         (sha256
-          (base32 "0j5kpwiwdldfml83gmd3apvly28r6add7qa502zwzvlczq89rcd8"))))
-      (build-system cargo-build-system)
-      (arguments
-       (list
-        #:install-source? #f
-        #:phases
-        #~(modify-phases %standard-phases
-            (add-after 'unpack 'chdir
-              (lambda _
-                (chdir "nucleotide-monitor"))))))
-      (native-inputs (list pkg-config))
-      (inputs (cons libxkbcommon
-                    (cargo-inputs 'nucleotide-monitor
-                                  #:module '(sagittarius packages rust-crates))))
-      (synopsis "Layer-shell panels for the nucleotide window manager")
-      (description
-       "nucleotide-monitor shows the keys that can follow a prefix and an
-overview of all windows for the nucleotide window manager.")
-      (home-page "https://github.com/fmarl/nucleotide-tools")
-      (license license:gpl3+))))
+(define-public nucleotide-tools
+  (package
+    (name "nucleotide-tools")
+    (version "0.3.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/fmarl/nucleotide-tools")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "14fppyzrb7kyycqjcfa6z0s7q7b94wf3wx912ab1iaf978l2kjla"))))
+    (build-system cargo-build-system)
+    (arguments
+     (list
+      #:install-source? #f
+      #:cargo-install-paths ''("nucleotide-which-key" "nucleotide-overview")))
+    (native-inputs (list pkg-config))
+    (inputs (cons libxkbcommon
+                  (cargo-inputs 'nucleotide-tools
+                                #:module '(sagittarius packages rust-crates))))
+    (synopsis "Panels for the nucleotide window manager")
+    (description
+     "nucleotide-tools are optional tools for the nucleotide window manager.
+nucleotide-which-key shows the keys that can follow the ones pressed, and
+nucleotide-overview shows all windows and lets you search and focus them.")
+    (home-page "https://github.com/fmarl/nucleotide-tools")
+    (license license:gpl3+)))
