@@ -19,7 +19,7 @@
 (define-public nucleotide
   (package
     (name "nucleotide")
-    (version "0.6.0")
+    (version "0.7.0")
     (source
      (origin
        (method git-fetch)
@@ -28,7 +28,7 @@
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0sv1majyhr488790wdjww0wrhi8z53acl37yl5c0vk76vw166fpj"))))
+        (base32 "1k071d4s8almbr1p8vpzplcvn6nlwivfm2p02v0s8z64k2dy9mlg"))))
     (build-system asdf-build-system/sbcl)
     (arguments
      (list
